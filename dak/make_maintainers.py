@@ -137,7 +137,7 @@ def main():
 
     if Options["Print"]:
         for package in sorted(maintainers):
-            print(format(package, maintainers[package]))
+            sys.stdout.write(format(package, maintainers[package]))
     else:
         maintainer_file = open('Maintainers', 'w')
         uploader_file = open('Uploaders', 'w')
