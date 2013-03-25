@@ -39,11 +39,9 @@ function onerror() {
 
 # Updating various files
 function updates() {
-    log "Updating Mirror list and mailing-lists.txt"
+    log "Updating Mirror list"
     cd $configdir
     $scriptsdir/update-mirrorlists
-    $scriptsdir/update-mailingliststxt
-    $scriptsdir/update-pseudopackages.sh
 }
 
 # The first i18n one, syncing new descriptions
