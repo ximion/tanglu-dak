@@ -39,9 +39,8 @@ function onerror() {
 
 # Updating various files
 function updates() {
-    log "Updating Bugs docu, Mirror list and mailing-lists.txt"
+    log "Updating Mirror list and mailing-lists.txt"
     cd $configdir
-    $scriptsdir/update-bugdoctxt
     $scriptsdir/update-mirrorlists
     $scriptsdir/update-mailingliststxt
     $scriptsdir/update-pseudopackages.sh
