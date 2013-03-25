@@ -1,0 +1,45 @@
+# locations used by many scripts
+
+base=/srv/dak
+dakbase=/var/archive-kit
+dakdir=$dakbase/dak
+public=/srv/ftp-master.tanglu.org
+bindir=$base/bin
+ftpdir=$base/ftp
+webdir=$public/web
+indices=$ftpdir/indices
+archs=$(dak admin a list | tr '\n' ' ')
+
+scriptdir=$base/scripts
+masterdir=$base/dak/
+configdir=$base/config/tanglu
+scriptsdir=$base/scripts/tanglu
+dbdir=$base/database/
+lockdir=$base/lock/
+stagedir=$lockdir/stages
+overridedir=$scriptdir/override
+extoverridedir=$scriptdir/external-overrides
+logdir=$base/log/cron/
+
+queuedir=$base/queue/
+unchecked=/pub/ftp/incoming/
+accepted=$queuedir/accepted/
+mirrordir=$base/mirror/
+incoming=$base/incoming
+newstage=$queuedir/newstage/
+exportdir=$base/export/
+exportpublic=$public/rsync/export/
+
+ftpgroup=debadmin
+
+public_archives=(ftp-master backports)
+
+TMPDIR=${base}/tmp
+
+PATH=$masterdir:$PATH
+umask 022
+unset CDPATH
+GZIP='--rsyncable' ; export GZIP
+
+# Set the database variables
+eval $(dak admin config db-shell)

@@ -1,0 +1,12 @@
+input: /srv/ftp-master.tanglu.org/web/removals.txt
+items: 16
+titlelength: 80
+
+title: Removals from Tanglu
+link: http://ftp-master.tanglu.org/removals.txt
+description: List of all the removals from Tanglu's archives
+subject: Removals from Tanglu
+creator: mak@debian.org
+publisher: mak@debian.org
+rights: Copyright 2005, Tollef Fog Heen
+language: en-us

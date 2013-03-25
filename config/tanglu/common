@@ -1,0 +1,164 @@
+# -*- mode:sh -*-
+# log something (basically echo it together with a timestamp)
+#
+# Set $PROGRAM to a string to have it added to the output.
+function log () {
+        local prefix=${PROGRAM:-}
+        echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${prefix}[$$]: $@"
+}
+
+# log the message using log() but then also send a mail
+# to the address configured in MAILTO (if non-empty)
+function log_error () {
+        log "$@"
+        if [ -z "${MAILTO}" ]; then
+                echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" ${MAILTO}  -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+        fi
+}
+
+# debug log, only output when DEBUG=1
+function debug () {
+    if [ $DEBUG -eq 1 ]; then
+        log "$*"
+    fi
+}
+
+function wbtrigger() {
+    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
+        /srv/wanna-build/triggers/trigger.local
+    fi
+    rm -f "${LOCK_BUILDD}"
+}
+
+# used by cron.dinstall *and* cron.unchecked.
+function make_buildd_dir () {
+    local overridesuite
+    local suite
+
+    dak manage-build-queues -a
+    dak generate-packages-sources2 -a build-queues
+    dak generate-releases -a build-queues >/dev/null
+    ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
+
+    for suite in aequorea; do
+        rm -rf "$incoming/dists/$suite/buildd"
+        mkdir -p "$incoming/dists/$suite/buildd"
+        dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
+    done
+    rm -f ${incoming}/public/*
+    dak export-suite -s "accepted" -d "$incoming/public"
+
+    # export to old build queue directories
+    # XXX: Remove once the buildds use the version generated above.
+    for suite in $(ls -1 $incoming/dists/); do
+        # Skip project trace directory
+        if [ "${suite}x" = "projectx" ]; then continue; fi
+        cd ${incoming}/dists/${suite}/buildd
+
+        overridesuite=aequorea
+
+        apt-ftparchive packages . $overridedir/override.${overridesuite}.all3 >Packages
+        gzip -9c --rsyncable <Packages >Packages.gz
+        apt-ftparchive sources . $overridedir/override.${overridesuite}.all3 >Sources
+        gzip -9c --rsyncable <Sources >Sources.gz
+
+        rm -f buildd/Release
+        cd ..
+        apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Tanglu" -o APT::FTPArchive::Release::Label="Tanglu" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
+
+        gpg --secret-keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 119AE60F --detach-sign -o Release.gpg Release
+
+        mv Release Release.gpg buildd/
+    done
+
+    STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
+
+    for dist in $(ls -1 ${incoming}/dists/); do
+        # Skip project trace directory
+        if [ "${dist}x" = "projectx" ]; then continue; fi
+        cd ${incoming}/dists/${dist}
+        mkdir -p tree/${STAMP}
+        cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
+        ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
+        find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    done
+}
+
+# Process (oldstable)-proposed-updates "NEW" queue
+function punew_do() {
+    date -u -R >> REPORT
+    #FIXME: Does not work for Tanglu
+    #dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" team@backports.debian.orgX -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+    echo >> REPORT
+}
+
+# These versions used in dinstall
+function punew() {
+    if [ "${PROGRAM}" = "dinstall" ]; then
+        log "Doing automated p-u-new processing"
+    fi
+    cd "${queuedir}/p-u-new"
+    punew_do "$1" "p-u-new"
+}
+
+function opunew() {
+    if [ "${PROGRAM}" = "dinstall" ]; then
+        log "Doing automated o-p-u-new processing"
+    fi
+    cd "${queuedir}/o-p-u-new"
+    punew_do "$1" "o-p-u-new"
+}
+
+# Do the unchecked processing, in case we have files.
+function do_unchecked () {
+    cd $unchecked
+
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    report=$queuedir/REPORT
+    timestamp=$(date "+%Y-%m-%d %H:%M")
+    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
+
+    echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
+    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
+    dak process-commands -d "$unchecked" >> $report
+}
+
+# process NEW policy queue
+function do_new () {
+    if [ "${PROGRAM}" = "dinstall" ]; then
+	log "Doing NEW processing"
+    fi
+
+   (dak process-policy new; dak process-policy byhand) | mail -a "X-Debian: DAK" -e -s "Tanglu NEW and BYHAND processing" ftpmaster@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+
+    dak clean-suites -a new,backports-new
+}
+
+function reports() {
+    # Send a report on NEW/BYHAND packages
+    log "Nagging ftpteam about NEW/BYHAND packages"
+    dak queue-report | mail -a "X-Debian: DAK" -e -s "Tanglu NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+    # and one on crufty packages
+    log "Sending information about crufty packages"
+    dak cruft-report --mode bdo -R > $webdir/cruft-report-daily.txt
+     #dak cruft-report -R -s experimental >> $webdir/cruft-report-daily.txt
+    cat $webdir/cruft-report-daily.txt | mail -a "X-Debian: DAK" -e -s "Tanglu archive cruft report for $(date +%D)" ftpmaster@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+}
+
+function pg_timestamp() {
+    tsname=${1:-"unknown"}
+    log "Saving postgres transaction id for ${tsname}"
+    psql -tAc 'select txid_current();' > $base/backup/txid_${tsname}_$(date +%Y.%m.%d-%H:%M:%S)
+}
+
+function get_archiveroot() {
+    local archivename="$1"
+    local query="SELECT path FROM archive WHERE name='${archivename}'"
+    local archiveroot="$(psql -tAc "${query}")"
+    if [ -z "${archiveroot}" ]; then
+        echo "get_archiveroot: couldn't get archiveroot for '${archivename}'" >&2
+        return 1
+    fi
+    echo "${archiveroot}"
+}
