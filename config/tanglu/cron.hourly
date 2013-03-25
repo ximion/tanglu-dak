@@ -1,0 +1,68 @@
+#! /bin/bash
+#
+# Executed hourly via cron, out of dak's crontab.
+
+set -e
+set -o pipefail
+set -u
+
+export SCRIPTVARS=/srv/dak/config/tanglu/vars
+. $SCRIPTVARS
+
+PROGRAM="Hourly"
+########################################################################
+# Functions                                                            #
+########################################################################
+# common functions are "outsourced"
+. "${configdir}/common"
+
+dak import-users-from-passwd
+
+# do not run show-new and other stuff in parallel
+LOCKFILE="$lockdir/unchecked.lock"
+cleanup() {
+    rm -f "${LOCKFILE}"
+}
+
+if lockfile -r16 $LOCKFILE 2> /dev/null; then
+    trap cleanup EXIT
+    do_new
+    dak show-new > /dev/null || true
+    cleanup
+    trap - EXIT
+fi
+
+dak queue-report -n > $webdir/new.html
+dak queue-report -8 -d new,byhand -r $webdir/stat
+# FIXME: _tanglu: No deferred queue
+#dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
+dak graph -n new,byhand,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
+
+cd $webdir
+# FIXME: _Tanglu disabled
+#cat removals-20*.txt > removals-full.txt
+#cat removals.txt >> removals-full.txt
+#cat removals-20*.822 > removals-full.822
+#cat removals.822 >> removals-full.822
+
+$dakdir/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
+$dakdir/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
+
+$scriptsdir/generate-d-i
+
+# do the buildd key updates
+BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
+exec >> "${BUILDDFUN}" 2>&1
+${scriptsdir}/buildd-remove-keys
+${scriptsdir}/buildd-add-keys
+${scriptsdir}/buildd-prepare-dir
+
+for keyring in $(dak admin k list-binary); do
+    dak import-keyring --generate-users "%s" ${keyring}
+done
+exec >>/dev/null 2>&1
+
+DATE=$(date -Is)
+cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+
+rm -f "${BUILDDFUN}"

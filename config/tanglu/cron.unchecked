@@ -1,0 +1,122 @@
+#!/bin/bash
+# No way I try to deal with a crippled sh just for POSIX foo.
+
+# Copyright (C) 2009 Joerg Jaspert <joerg@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# exit on errors
+set -e
+set -o pipefail
+# make sure to only use defined variables
+set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/dak/config/tanglu/vars
+. $SCRIPTVARS
+
+LOCKDAILY=""
+LOCKFILE="$lockdir/unchecked.lock"
+LOCK_NEW="$lockdir/processnew.lock"
+NOTICE="$lockdir/daily.lock"
+LOCK_BUILDD="$lockdir/buildd.lock"
+
+# our name
+PROGRAM="unchecked"
+
+if [ -e $NOTICE ]; then
+    exit 0;
+fi
+
+########################################################################
+# Functions                                                            #
+########################################################################
+# common functions are "outsourced"
+. "${configdir}/common"
+
+STAMP=$(date "+%Y%m%d%H%M")
+
+cleanup() {
+    rm -f "$LOCKFILE"
+    if [ ! -z "$LOCKDAILY" ]; then
+        rm -f "$NOTICE"
+    fi
+}
+
+function do_buildd () {
+    if lockfile -r3 $NOTICE; then
+        LOCKDAILY="YES"
+        cd $overridedir
+        dak make-overrides &>/dev/null
+        rm -f override.aequorea.all3 override.aequorea.all3.src override.squeeze-backports.all3 override.squeeze-backports.all3.src
+        for i in main contrib non-free main.debian-installer; do
+            cat override.aequorea.$i >> override.aequorea.all3
+            #cat override.squeeze-backports.$i >> override.squeeze-backports.all3
+            if [ "$i" != "main.debian-installer" ]; then
+                cat override.aequorea.$i.src >> override.aequorea.all3.src
+                #cat override.squeeze-backports.$i.src >> override.squeeze-backports.all3.src
+            fi
+        done
+        make_buildd_dir
+        wbtrigger
+    fi
+}
+
+function do_dists () {
+    #cd $configdir
+    #dak generate-filelist -s unstable,experimental -i
+    dak generate-packages-sources2 -s aequorea experimental >/dev/null
+}
+
+########################################################################
+# the actual unchecked functions follow                                #
+########################################################################
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+
+# only run one cron.unchecked
+if ! lockfile -r8 $LOCKFILE; then
+    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
+    exit 0
+fi
+trap cleanup 0
+
+
+pg_timestamp preunchecked >/dev/null
+
+# Process policy queues
+punew stable-new
+opunew oldstable-new
+
+# Finally deal with unchecked
+do_unchecked
+
+if [ ! -z "$changes" ]; then
+    #sync_debbugs
+    do_buildd
+    #do_dists
+fi
+
+dak contents -l 10000 scan-binary
+dak contents -l 1000 scan-source
+pg_timestamp postunchecked >/dev/null
+
+# cleanup incoming upload dir
+find /pub/ftp/incoming/ -mtime +1 -exec rm {} \;
