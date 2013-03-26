@@ -22,7 +22,6 @@ import subprocess
 from debian import deb822
 
 # settings
-ARCHIVE_ROOT = "/srv/archive.tanglu.org"
 TRAC_DIR = "/srv/bugs.tanglu.org"
 
 class DakTracBridge:
@@ -30,7 +29,7 @@ class DakTracBridge:
         self.tracComponents = self._getTracComponents ()
 
     def getArchiveSourcePackageInfo (self):
-        p = subprocess.Popen( ["dpkg-scansources", ARCHIVE_ROOT], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p = subprocess.Popen( ["dak", "make-maintainers", "-a", "janus", "-s", "-p"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         resLines = ""
         while (True):
           retcode = p.poll ()
@@ -38,9 +37,17 @@ class DakTracBridge:
           resLines += line
           if (retcode is not None):
               break
-        debSourceInfo = deb822.Deb822.iter_paragraphs (resLines.splitlines ())
+        if p.returncode is not 0:
+            raise Exception(resLines)
 
-        return debSourceInfo
+        rawPkgMaintLines = resLines.splitlines ()
+        pkgMaintInfo = {}
+        for cmpln in rawPkgMaintLines:
+           tcomp = cmpln.strip ().split (" ", 1)
+           if len (tcomp) > 1:
+               pkgMaintInfo[tcomp[0].strip ()] = tcomp[1].strip ()
+
+        return pkgMaintInfo
 
     def _getTracComponents (self):
         p = subprocess.Popen( ["trac-admin", TRAC_DIR, "component", "list"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -51,6 +58,8 @@ class DakTracBridge:
           resLines += line
           if (retcode is not None):
               break
+        if p.returncode is not 0:
+            raise Exception(resLines)
 
         rawTracCmp = resLines.splitlines ()
         tracCmps = {}
@@ -89,8 +98,8 @@ class DakTracBridge:
         # get some fresh data
         debSourceInfo = self.getArchiveSourcePackageInfo ()
         for spkg in debSourceInfo:
-            pkg_name = spkg["Package"]
-            pkg_maint = spkg["Maintainer"]
+            pkg_name = spkg
+            pkg_maint = debSourceInfo[spkg]
             if not pkg_name in self.tracComponents:
                 self.addTracComponent (pkg_name, pkg_maint)
             elif not self.tracComponents[pkg_name] is pkg_maint:
