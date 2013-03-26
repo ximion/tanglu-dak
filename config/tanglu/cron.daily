@@ -20,4 +20,7 @@ dak queue-report -d new,proposedupdates | mail -e -s "Tanglu NEW and BYHAND on $
 dak cruft-report -R --mode bdo -s aequorea > $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu Aequorea archive cruft report for $(date +%D)" matthias@tenstral.net
 
+# sync the Tanglu bug database
+$scriptsdir/dak-trac-bridge.py
+
 echo Daily cron scripts successful.
