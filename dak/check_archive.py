@@ -275,7 +275,7 @@ def check_checksums():
 
     print "Checking file checksums & sizes..."
     for f in q:
-        filename = f.filename
+        filename = f.fullpath
 
         try:
             fi = utils.open_file(filename)
