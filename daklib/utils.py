@@ -780,7 +780,7 @@ def which_conf_file ():
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
-            apt_pkg.ReadConfigFileISC(Cnf,confpath)
+            apt_pkg.read_config_fileISC(Cnf,confpath)
 
     # We are still in here, so there is no local config file or we do
     # not allow local files. Do the normal stuff.
@@ -796,7 +796,7 @@ def which_apt_conf_file ():
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
-            apt_pkg.ReadConfigFileISC(Cnf,default_config)
+            apt_pkg.read_config_file_isc(Cnf,default_config)
 
     if Cnf.get("Config::" + res + "::AptConfig"):
         return Cnf["Config::" + res + "::AptConfig"]
@@ -1622,7 +1622,7 @@ def get_packages_from_ftp(root, suite, component, architecture):
         if (result != 0):
             fubar("Gunzip invocation failed!\n%s\n" % (output), result)
     packages = open_file(temp_file)
-    Packages = apt_pkg.ParseTagFile(packages)
+    Packages = apt_pkg.parse_tag_file(packages)
     os.unlink(temp_file)
     return Packages
 
@@ -1756,7 +1756,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             if package in removals: continue
             parsed_dep = []
             try:
-                parsed_dep += apt_pkg.ParseDepends(deps[package])
+                parsed_dep += apt_pkg.parse_depends(deps[package])
             except ValueError as e:
                 print "Error for package %s: %s" % (package, e)
             for dep in parsed_dep:
@@ -1825,7 +1825,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             # Remove [arch] information since we want to see breakage on all arches
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
-                parsed_dep += apt_pkg.ParseDepends(build_dep)
+                parsed_dep += apt_pkg.parse_depends(build_dep)
             except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
