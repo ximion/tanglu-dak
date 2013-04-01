@@ -266,6 +266,52 @@ def check_source_in_one_dir():
     print "Found %d source packages where the source is not all in one directory." % (broken_count)
 
 ################################################################################
+def fix_checksums():
+    """
+    Update missing checksums
+    """
+    print "Getting file information from database..."
+    session = DBConn().session();
+    q = session.query(PoolFile)
+
+    print "Checking file checksums & sizes..."
+    for f in q:
+        filename = f.fullpath
+
+        try:
+            fi = utils.open_file(filename)
+        except:
+            utils.warn("can't open '%s'." % (filename))
+            continue
+
+        size = os.stat(filename)[stat.ST_SIZE]
+        if size != f.filesize:
+            utils.warn("**WARNING** size mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, size, f.filesize))
+
+        md5sum = apt_pkg.md5sum(fi)
+        if md5sum != f.md5sum:
+            utils.warn("**WARNING** md5sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, md5sum, f.md5sum))
+            continue;
+
+        fi.seek(0)
+        sha1sum = apt_pkg.sha1sum(fi)
+        if f.sha1sum is None:
+            f.sha1sum = sha1sum
+            print "Added missing sha1 checksum for {0}".format(f.filename)
+
+        fi.seek(0)
+        sha256sum = apt_pkg.sha256sum(fi)
+        if f.sha256sum is None:
+            f.sha256sum = sha256sum
+            print "Added missing sha256 checksum for {0}".format(f.filename)
+
+    session.commit()
+
+    print "Done."
+
+################################################################################
+#
+
 def check_checksums():
     """
     Validate all files
@@ -592,6 +638,8 @@ def main ():
         check_build_depends()
     elif mode == "add-missing-source-checksums":
         add_missing_source_checksums()
+    elif mode == "fix-checksums":
+        fix_checksums()
     else:
         utils.warn("unknown mode '%s'" % (mode))
         usage(1)
