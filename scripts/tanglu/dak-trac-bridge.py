@@ -102,7 +102,7 @@ class DakTracBridge:
             pkg_maint = debSourceInfo[spkg]
             if not pkg_name in self.tracComponents:
                 self.addTracComponent (pkg_name, pkg_maint)
-            elif not self.tracComponents[pkg_name] is pkg_maint:
+            elif not self.tracComponents[pkg_name] == pkg_maint:
                 self.chownTracComponent (pkg_name, pkg_maint)
         # TODO: Maybe remove components as soon as they leave the maintained distribution?
         # (or better keep them for historic reasons?))
