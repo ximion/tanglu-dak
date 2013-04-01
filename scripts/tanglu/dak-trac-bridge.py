@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (C) 2013 Matthias Klumpp <mak@debian.org>
 
 # Licensed under the GNU Lesser General Public License Version 3
@@ -15,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this library.  If not, see <http://www.gnu.org/licenses/>.
+#!/usr/bin/python
 
 import os
 import sys
@@ -75,7 +75,7 @@ class DakTracBridge:
     def addTracComponent (self, name, user):
         print "[add] Adding new component '%s' and assigning to %s" % (name, user)
         try:
-            output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "add", name, user])
+            output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "add", name, user.replace("'", "'\\''")])
         except subprocess.CalledProcessError as e:
             print e
             return False
@@ -86,7 +86,7 @@ class DakTracBridge:
     def chownTracComponent (self, name, user):
         print "[modify] Assigning component '%s' to %s" % (name, user)
         try:
-            output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "chown", name, user])
+            output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "chown", name, user.replace("'", "'\\''")])
         except subprocess.CalledProcessError as e:
             print e
             return False
