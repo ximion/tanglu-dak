@@ -101,6 +101,8 @@ function filelist() {
 function fingerprints() {
     log "Updating fingerprints"
     dak import-keyring -L /srv/dak/keyrings/debian-keyring.gpg
+    dak import-keyring -L /srv/dak/keyrings/buildd/i386-keyring.gpg
+    dak import-keyring -L /srv/dak/keyrings/buildd/amd64-keyring.gpg
 
     OUTFILE=$(mktemp)
     dak import-keyring --generate-users "%s" /srv/keyring.tanglu.org/keyrings/debian/debian-maintainers.gpg >"${OUTFILE}"
@@ -578,7 +580,8 @@ function changelogs() {
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-    sudo -H -u archvsync /home/archvsync/runmirrors metaftpdo > ~dak/runmirrors-metadata.log 2>&1 &
+    # TG::DISABLED
+    #sudo -H -u archvsync /home/archvsync/runmirrors metaftpdo > ~dak/runmirrors-metadata.log 2>&1 &
 }
 
 function gitpdiff() {
