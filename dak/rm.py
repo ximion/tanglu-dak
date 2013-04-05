@@ -52,7 +52,8 @@ from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.regexes import re_strip_source_version, re_bin_only_nmu
-import debianbts as bts
+# Tanglu: Ugly, but we never ever want to send messages to Debian's BTS
+#import debianbts as bts
 
 ################################################################################
 
