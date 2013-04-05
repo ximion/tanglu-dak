@@ -49,6 +49,9 @@ fi
 # common functions are "outsourced"
 . "${configdir}/common"
 
+# source the dinstall functions
+. "${configdir}/dinstall.functions"
+
 STAMP=$(date "+%Y%m%d%H%M")
 
 cleanup() {
