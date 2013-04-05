@@ -25,10 +25,8 @@ function debug () {
 
 function wbtrigger() {
     SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
-    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
-        /srv/wanna-build/triggers/trigger.local
-    fi
-    rm -f "${LOCK_BUILDD}"
+    # trigger wanna-build
+    sudo -H -u wbadm /srv/wanna-build/triggers/trigger.local
 }
 
 # used by cron.dinstall *and* cron.unchecked.
