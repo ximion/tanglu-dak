@@ -75,7 +75,8 @@ function do_buildd () {
                 #cat override.squeeze-backports.$i.src >> override.squeeze-backports.all3.src
             fi
         done
-        make_buildd_dir
+        # We don't use this in Tanglu
+        #make_buildd_dir
         wbtrigger
     fi
 }

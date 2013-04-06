@@ -310,13 +310,14 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="buildd_dir"
-    TIME="buildd_dir"
-    ARGS=""
-    ERR=""
-)
-stage $GO
+# Unused in Tanglu
+#GO=(
+#    FUNC="buildd_dir"
+#    TIME="buildd_dir"
+#    ARGS=""
+#    ERR=""
+#)
+#stage $GO
 
 state "scripts"
 GO=(
