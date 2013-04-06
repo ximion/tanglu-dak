@@ -26,7 +26,7 @@ function debug () {
 function wbtrigger() {
     SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
     # trigger wanna-build
-    sudo -H -u wbadm /srv/wanna-build/triggers/trigger.local
+    sudo -H -u wbadm /srv/wanna-build/triggers/trigger.tanglu
 }
 
 # used by cron.dinstall *and* cron.unchecked.
