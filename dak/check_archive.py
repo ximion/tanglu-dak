@@ -439,7 +439,7 @@ def validate_sources(suite, component):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     sources = utils.open_file(temp_filename)
-    Sources = apt_pkg.ParseTagFile(sources)
+    Sources = apt_pkg.parse_tag_file(sources)
     while Sources.Step():
         source = Sources.Section.Find('Package')
         directory = Sources.Section.Find('Directory')
@@ -483,7 +483,7 @@ def validate_packages(suite, component, architecture):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     packages = utils.open_file(temp_filename)
-    Packages = apt_pkg.ParseTagFile(packages)
+    Packages = apt_pkg.parse_tag_file(packages)
     while Packages.Step():
         filename = "%s/%s" % (cnf["Dir::Root"], Packages.Section.Find('Filename'))
         if not os.path.exists(filename):
@@ -539,7 +539,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
             field = dsc.get(field_name)
             if field:
                 try:
-                    apt_pkg.ParseSrcDepends(field)
+                    apt_pkg.parse_src_depends(field)
                 except:
                     print "E: [%s] %s: %s" % (filename, field_name, field)
                     pass
