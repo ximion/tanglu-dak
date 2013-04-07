@@ -428,7 +428,9 @@ def validate_sources(suite, component):
     """
     Ensure files mentioned in Sources exist
     """
-    filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
+    cnf = Config()
+
+    filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
@@ -444,20 +446,20 @@ def validate_sources(suite, component):
         files = Sources.Section.Find('Files')
         for i in files.split('\n'):
             (md5, size, name) = i.split()
-            filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
+            filename = "%s/%s/%s" % (cnf["Dir::Root"], directory, name)
             if not os.path.exists(filename):
                 if directory.find("potato") == -1:
                     print "W: %s missing." % (filename)
                 else:
                     pool_location = utils.poolify (source, component)
-                    pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
+                    pool_filename = "%s/%s/%s" % (cnf["Dir::Pool"], pool_location, name)
                     if not os.path.exists(pool_filename):
                         print "E: %s missing (%s)." % (filename, pool_filename)
                     else:
                         # Create symlink
                         pool_filename = os.path.normpath(pool_filename)
                         filename = os.path.normpath(filename)
-                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
+                        src = utils.clean_symlink(pool_filename, filename, cnf["Dir::Root"])
                         print "Symlinking: %s -> %s" % (filename, src)
                         #os.symlink(src, filename)
     sources.close()
@@ -469,8 +471,10 @@ def validate_packages(suite, component, architecture):
     """
     Ensure files mentioned in Packages exist
     """
+    cnf = Config()
+
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
-               % (Cnf["Dir::Root"], suite, component, architecture)
+               % (cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
     # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
@@ -481,7 +485,7 @@ def validate_packages(suite, component, architecture):
     packages = utils.open_file(temp_filename)
     Packages = apt_pkg.ParseTagFile(packages)
     while Packages.Step():
-        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
+        filename = "%s/%s" % (cnf["Dir::Root"], Packages.Section.Find('Filename'))
         if not os.path.exists(filename):
             print "W: %s missing." % (filename)
     packages.close()
