@@ -11,24 +11,24 @@ indices=$ftpdir/indices
 archs=$(dak admin a list | tr '\n' ' ')
 
 scriptdir=$base/scripts
-masterdir=$base/dak/
+masterdir=$base/dak
 configdir=$base/config/tanglu
 scriptsdir=$base/scripts/tanglu
-dbdir=$base/database/
-lockdir=$base/lock/
+dbdir=$base/database
+lockdir=$base/lock
 stagedir=$lockdir/stages
 overridedir=$scriptdir/override
 extoverridedir=$scriptdir/external-overrides
-logdir=$base/log/cron/
+logdir=$base/log/cron
 
-queuedir=$base/queue/
-unchecked=/pub/ftp/incoming/
-accepted=$queuedir/accepted/
-mirrordir=$base/mirror/
+queuedir=$base/queue
+unchecked=/pub/ftp/incoming
+accepted=$queuedir/accepted
+mirrordir=$base/mirror
 incoming=$base/incoming
-newstage=$queuedir/newstage/
-exportdir=$base/export/
-exportpublic=$public/rsync/export/
+newstage=$queuedir/newstage
+exportdir=$base/export
+exportpublic=$public/rsync/export
 
 ftpgroup=debadmin
 
