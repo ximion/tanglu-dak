@@ -49,4 +49,4 @@ DINSTALLSTATE="${webdir}/dinstall.status"
 TRACEFILE="${ftpdir}/project/trace/ftp-master.tanglu.org"
 
 #archiveroot="$(get_archiveroot "backports")"
-#TRACEFILE_BDO="${archiveroot}/project/trace/ftp-master.debian.org"
+#TRACEFILE_BDO="${archiveroot}/project/trace/ftp-master.tanglu.org"
