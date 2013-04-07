@@ -113,11 +113,12 @@ opunew oldstable-new
 # Finally deal with unchecked
 do_unchecked
 
-if [ ! -z "$changes" ]; then
+# FIXME-TANGLU: We need to update the changes check here...
+#if [ ! -z "$changes" ]; then
     #sync_debbugs
     do_buildd
     do_dists
-fi
+#fi
 
 dak contents -l 10000 scan-binary
 dak contents -l 1000 scan-source
