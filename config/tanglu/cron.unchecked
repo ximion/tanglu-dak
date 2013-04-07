@@ -83,7 +83,7 @@ function do_buildd () {
 
 function do_dists () {
     cd $configdir
-    dak generate-filelist -s unstable,experimental -i
+    dak generate-filelist -s aequorea,experimental -i
     dak generate-packages-sources2 -s aequorea experimental > /dev/null
     release
 }
@@ -116,8 +116,8 @@ do_unchecked
 # FIXME-TANGLU: We need to update the changes check here...
 #if [ ! -z "$changes" ]; then
     #sync_debbugs
-    do_buildd
     do_dists
+    do_buildd
 #fi
 
 dak contents -l 10000 scan-binary
