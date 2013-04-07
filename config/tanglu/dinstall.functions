@@ -166,7 +166,7 @@ function release() {
     log "Generating i18n/Index"
     (
         cd "$ftpdir/dists";
-        for dist in testing unstable experimental proposed-updates testing-proposed-updates; do
+        for dist in aequorea aequorea-updates; do
             $scriptsdir/generate-i18n-Index $dist;
         done
     )
