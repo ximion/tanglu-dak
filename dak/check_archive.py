@@ -439,11 +439,11 @@ def validate_sources(suite, component):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     sources = utils.open_file(temp_filename)
-    Sources = apt_pkg.parse_tag_file(sources)
-    while Sources.Step():
-        source = Sources.Section.Find('Package')
-        directory = Sources.Section.Find('Directory')
-        files = Sources.Section.Find('Files')
+    Sources = apt_pkg.TagFile(sources)
+    while Sources.step():
+        source = Sources.section.find('Package')
+        directory = Sources.section.find('Directory')
+        files = Sources.section.find('Files')
         for i in files.split('\n'):
             (md5, size, name) = i.split()
             filename = "%s/%s/%s" % (cnf["Dir::Root"], directory, name)
@@ -483,9 +483,9 @@ def validate_packages(suite, component, architecture):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     packages = utils.open_file(temp_filename)
-    Packages = apt_pkg.parse_tag_file(packages)
-    while Packages.Step():
-        filename = "%s/%s" % (cnf["Dir::Root"], Packages.Section.Find('Filename'))
+    Packages = apt_pkg.TagFile(packages)
+    while Packages.step():
+        filename = "%s/%s" % (cnf["Dir::Root"], Packages.section.find('Filename'))
         if not os.path.exists(filename):
             print "W: %s missing." % (filename)
     packages.close()
