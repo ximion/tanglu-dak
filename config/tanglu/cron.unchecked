@@ -66,16 +66,14 @@ function do_buildd () {
         LOCKDAILY="YES"
         cd $overridedir
         dak make-overrides &>/dev/null
-        rm -f override.aequorea.all3 override.aequorea.all3.src override.squeeze-backports.all3 override.squeeze-backports.all3.src
+        rm -f override.aequorea.all3 override.aequorea.all3.src
         for i in main contrib non-free main.debian-installer; do
             cat override.aequorea.$i >> override.aequorea.all3
-            #cat override.squeeze-backports.$i >> override.squeeze-backports.all3
             if [ "$i" != "main.debian-installer" ]; then
                 cat override.aequorea.$i.src >> override.aequorea.all3.src
-                #cat override.squeeze-backports.$i.src >> override.squeeze-backports.all3.src
             fi
         done
-        # We don't use this in Tanglu
+        # FIXME-TANGLU: We don't use this in Tanglu
         #make_buildd_dir
         wbtrigger
     fi
