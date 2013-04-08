@@ -86,8 +86,8 @@ function make_buildd_dir () {
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
     date -u -R >> REPORT
-    #FIXME: Does not work for Tanglu
-    #dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" team@backports.debian.orgX -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+    # FIXME-TANGLU: Does not work for Tanglu
+    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
     echo >> REPORT
 }
 
@@ -130,7 +130,7 @@ function do_new () {
 
    (dak process-policy new; dak process-policy byhand) | mail -a "X-Debian: DAK" -e -s "Tanglu NEW and BYHAND processing" ftpmaster@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
 
-    dak clean-suites -a new,backports-new
+    dak clean-suites -a new
 }
 
 function reports() {
