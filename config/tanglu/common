@@ -85,11 +85,21 @@ function make_buildd_dir () {
 
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
+    local queue="$1"
+    local qdir="$2"
     date -u -R >> REPORT
-    # FIXME-TANGLU: Does not work for Tanglu
-    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+    #dak process-policy "${queue}" | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in ${queue}" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    #echo >> REPORT
 
-    echo >> REPORT
+    #dak generate-packages-sources2 -s "${queue}"
+
+    #STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
+
+    #local exportdir="${queuedir}${qdir}/tree/${STAMP}"
+    #local targetdir="${queuedir}${qdir}/export"
+    #dak export -q "${queue}" -d "${exportdir}" --all
+    #ln -sfT ${exportdir} ${targetdir}
+    #find ${queuedir}${qdir}/tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
 # These versions used in dinstall
