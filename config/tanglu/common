@@ -87,7 +87,8 @@ function make_buildd_dir () {
 function punew_do() {
     date -u -R >> REPORT
     # FIXME-TANGLU: Does not work for Tanglu
-    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "Tanglu NEW changes in $1" -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
+
     echo >> REPORT
 }
 
