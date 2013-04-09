@@ -100,7 +100,7 @@ function filelist() {
 
 function fingerprints() {
     log "Updating fingerprints"
-    dak import-keyring -L /srv/dak/keyrings/master-upload-keyring.gpg
+    dak import-keyring -L /srv/keyring.tanglu.org/master-upload-keyring.gpg
     dak import-keyring -L /srv/dak/keyrings/buildd/i386-keyring.gpg
     dak import-keyring -L /srv/dak/keyrings/buildd/amd64-keyring.gpg
 
