@@ -100,23 +100,23 @@ function filelist() {
 
 function fingerprints() {
     log "Updating fingerprints"
-    dak import-keyring -L /srv/dak/keyrings/debian-keyring.gpg
+    dak import-keyring -L /srv/dak/keyrings/master-upload-keyring.gpg
     dak import-keyring -L /srv/dak/keyrings/buildd/i386-keyring.gpg
     dak import-keyring -L /srv/dak/keyrings/buildd/amd64-keyring.gpg
 
     OUTFILE=$(mktemp)
-    dak import-keyring --generate-users "%s" /srv/keyring.tanglu.org/keyrings/debian/debian-maintainers.gpg >"${OUTFILE}"
+    dak import-keyring --generate-users "%s" /srv/keyring.tanglu.org/keyrings/maintainers-keyring.gpg >"${OUTFILE}"
 
     if [ -s "${OUTFILE}" ]; then
-        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
+        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.tanglu.org <<EOF
 From: Tanglu FTP Masters <ftpmaster@ftp-master.tanglu.org>
 To: <tanglu-project@lists.tanglu.org>
-Subject: Debian Maintainers Keyring changes
+Subject: Tanglu Maintainers Keyring changes
 Content-Type: text/plain; charset=utf-8
 X-Debian: DAK
 MIME-Version: 1.0
 
-The following changes to the debian-maintainers keyring have just been activated:
+The following changes to the tanglu-maintainers keyring have just been activated:
 
 $(cat $OUTFILE)
 
