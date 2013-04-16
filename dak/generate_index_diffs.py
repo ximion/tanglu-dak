@@ -311,8 +311,8 @@ def main():
         format = "%Y-%m-%d-%H%M.%S"
         Options["PatchName"] = time.strftime( format )
 
-    AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
+    AptCnf = apt_pkg.Configuration()
+    apt_pkg.read_config_file_isc(AptCnf,utils.which_apt_conf_file())
 
     if Options.has_key("RootDir"):
         Cnf["Dir::Root"] = Options["RootDir"]
