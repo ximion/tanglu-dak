@@ -77,7 +77,7 @@ class DakTracBridge:
         try:
             output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "add", name, user.replace("'", "'\\''")])
         except subprocess.CalledProcessError as e:
-            print e
+            print("%s\n%s" % (e, output))
             return False
 
         self.tracComponents[name] = user
@@ -88,7 +88,7 @@ class DakTracBridge:
         try:
             output = subprocess.check_output (["trac-admin", TRAC_DIR, "component", "chown", name, user.replace("'", "'\\''")])
         except subprocess.CalledProcessError as e:
-            print e
+            print("%s\n%s" % (e, output))
             return False
 
         self.tracComponents[name] = user
@@ -111,5 +111,5 @@ if __name__ == '__main__':
     daktrac = DakTracBridge ()
     daktrac.refreshTracComponentList ()
 
-    print "Done."
+    print("Done.")
 
