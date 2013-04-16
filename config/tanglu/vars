@@ -32,7 +32,7 @@ exportpublic=$public/rsync/export
 
 ftpgroup=debadmin
 
-public_archives=(janus ftp-master)
+public_archives=(janus)
 
 TMPDIR=${base}/tmp
 
