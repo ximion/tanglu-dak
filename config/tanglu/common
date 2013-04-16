@@ -26,6 +26,7 @@ function debug () {
 function jenkins_trigger() {
     # trigger update of Jenkins package build database
     # TODO
+    echo "Trigger Jenkins..."
 }
 
 # used by cron.dinstall *and* cron.unchecked.
