@@ -75,7 +75,7 @@ function do_buildd () {
         done
         # FIXME-TANGLU: We don't use this in Tanglu
         #make_buildd_dir
-        wbtrigger
+        jenkins_trigger
     fi
 }
 

@@ -23,10 +23,9 @@ function debug () {
     fi
 }
 
-function wbtrigger() {
-    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
-    # trigger wanna-build
-    sudo -H -u wbadm /srv/wanna-build/triggers/trigger.tanglu
+function jenkins_trigger() {
+    # trigger update of Jenkins package build database
+    # TODO
 }
 
 # used by cron.dinstall *and* cron.unchecked.
