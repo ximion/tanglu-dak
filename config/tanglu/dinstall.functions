@@ -100,9 +100,10 @@ function filelist() {
 
 function fingerprints() {
     log "Updating fingerprints"
-    dak import-keyring -L /srv/keyring.tanglu.org/keyrings/master-upload-keyring.gpg
-    dak import-keyring -L /srv/dak/keyrings/buildd/i386-keyring.gpg
-    dak import-keyring -L /srv/dak/keyrings/buildd/amd64-keyring.gpg
+    # FIXME-TANGLU: Run with "-L" to fetch uids from LDAP - there is no Tanglu-LDAP yet, so it is disabled
+    dak import-keyring /srv/keyring.tanglu.org/keyrings/master-upload-keyring.gpg
+    dak import-keyring /srv/dak/keyrings/buildd/i386-keyring.gpg
+    dak import-keyring /srv/dak/keyrings/buildd/amd64-keyring.gpg
 
     OUTFILE=$(mktemp)
     dak import-keyring --generate-users "%s" /srv/keyring.tanglu.org/keyrings/maintainers-keyring.gpg >"${OUTFILE}"
