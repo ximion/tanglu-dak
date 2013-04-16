@@ -236,7 +236,9 @@ function mkmaintainers() {
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for ofile in ${overridedir}/override.{aequorea,next}.{,extra.}{main,contrib,non-free}*; do
+    # FIXME-TANGLU: Hmm... what is the extra for? (TODO: ask ansgar)
+    # prev: for ofile in ${overridedir}/override.{aequorea}.{main,contrib,non-free}*; do
+    for ofile in ${overridedir}/override.{aequorea}.{,extra.}{main,contrib,non-free}*; do
         bname=${ofile##*/}
         gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
         chmod g+w ${indices}/${bname}.gz
