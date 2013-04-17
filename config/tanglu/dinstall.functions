@@ -552,8 +552,8 @@ function renamelogfile() {
     fi
 }
 
-function testingsourcelist() {
-    dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
+function develsourcelist() {
+    dak ls -s aequorea -f heidi -r .| egrep 'source$' > ${webdir}/aequorea.list
 }
 
 # do a last run of process-unchecked before dinstall is on.

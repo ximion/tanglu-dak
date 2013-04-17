@@ -353,13 +353,14 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="mkchecksums"
-    TIME="mkchecksums"
-    ARGS=""
-    ERR=""
-)
-stage $GO
+# FIXME-TANGLU: Disabled, needs more work...
+#GO=(
+#    FUNC="mkchecksums"
+#    TIME="mkchecksums"
+#    ARGS=""
+#    ERR=""
+#)
+#stage $GO
 
 GO=(
     FUNC="mirror"
@@ -416,14 +417,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="dm"
-    TIME=""
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
-GO=(
     FUNC="bts"
     TIME=""
     ARGS=""
@@ -457,7 +450,7 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="testingsourcelist"
+    FUNC="develsourcelist"
     TIME=""
     ARGS=""
     ERR="false"
