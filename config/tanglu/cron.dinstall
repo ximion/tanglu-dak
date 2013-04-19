@@ -417,14 +417,6 @@ GO=(
 stage $GO &
 
 GO=(
-    FUNC="bts"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
     FUNC="mirrorpush"
     TIME="mirrorpush"
     ARGS=""
