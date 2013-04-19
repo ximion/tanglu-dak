@@ -45,8 +45,8 @@ cd $webdir
 #cat removals-20*.822 > removals-full.822
 #cat removals.822 >> removals-full.822
 
-$dakdir/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
-$dakdir/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
+$dakdir/tools-tanglu/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
+$dakdir/tools-tanglu/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
 $scriptsdir/generate-d-i
 

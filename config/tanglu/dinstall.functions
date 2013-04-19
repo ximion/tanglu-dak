@@ -523,7 +523,7 @@ function cleantransactions() {
 }
 
 function logstats() {
-    $masterdir/tools/logs.py "$1"
+    $masterdir/tools-tanglu/logs.py "$1"
 }
 
 # save timestamp when we start
