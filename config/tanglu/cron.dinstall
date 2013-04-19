@@ -370,14 +370,6 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="ddaccess"
-    TIME="ddaccessible sync"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
 remove_all_locks
 trap - EXIT TERM HUP INT QUIT
 
