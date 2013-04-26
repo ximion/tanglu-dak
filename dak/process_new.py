@@ -120,7 +120,7 @@ class Priority_Completer:
 ################################################################################
 
 def claimed_overrides(upload, missing, session):
-    source = [upload.source.source]
+    source = [upload.source]
     binaries = set([x.package for x in upload.binaries])
     suites = ('unstable','experimental')
     for m in missing:
