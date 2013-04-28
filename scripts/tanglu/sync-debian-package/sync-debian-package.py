@@ -19,6 +19,7 @@
 import os
 import sys
 import apt_pkg
+import subprocess
 from optparse import OptionParser
 
 from pkginfo import *
@@ -35,6 +36,7 @@ class SyncPackage:
     def initialize(self, source_suite, target_suite, component):
         self._sourceSuite = source_suite
         self._component = component
+        self._target_suite = target_suite
         pkginfo_src = PackageInfoRetriever(self._momArchivePath, "debian", source_suite)
         pkginfo_dest = PackageInfoRetriever(self._momArchivePath, self._destDistro, target_suite)
         self._pkgs_src = pkginfo_src.get_packages_dict(component)
@@ -64,7 +66,21 @@ class SyncPackage:
     def _import_debian_package(self, pkg):
         # TODO: Call dak to import the source package
         print("Attempt to import package: %s" % (pkg))
-        return False
+        pkg_path = self._momArchivePath + "/pool/debian/" + pkg.directory + "/%s_%s.dsc" % (pkg.pkgname, pkg.getVersionNoEpoch())
+        print("(Import path: %s)" % (pkg_path))
+
+        p = subprocess.Popen(["dak", "import", "-a", "-s", self._target_suite, self._component, pkg_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        resLines = ""
+        while(True):
+          retcode = p.poll()
+          line = p.stdout.readline()
+          resLines += line
+          if (retcode is not None):
+              break
+          if p.returncode is not 0:
+              raise Exception(resLines)
+              return False
+        return True
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
         if src_pkg.pkgname in self._pkg_blacklist:

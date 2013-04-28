@@ -44,7 +44,7 @@ class PackageInfo():
         return noEpoch(self.version)
 
     def __str__(self):
-        return "PackageInfo_Obj: name: %s | version: %s | suite: %s | comp.: %s | archs: %s" % (self.pkgname, self.version, self.suite, self.component, self.archs)
+        return "Package: name: %s | version: %s | suite: %s | comp.: %s" % (self.pkgname, self.version, self.suite, self.component)
 
 class PackageInfoRetriever():
     def __init__(self, path, distro, suite):
