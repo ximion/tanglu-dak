@@ -72,7 +72,7 @@ class PackageInfoRetriever():
     def get_packages_dict(self, component):
         packageList = self._get_packages_for(component)
         packages_dict = {}
-        for pkg in packagesList:
+        for pkg in packageList:
             pkgname = pkg.pkgname
             # replace it only if the version of the new item is higher (required to handle epoch bumps and new uploads)
             if pkgname in packages_dict:

@@ -47,12 +47,12 @@ class SyncPackage:
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
         if self._destDistro in dest_pkg.version:
-            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (package_name, dest_pkg.version, srv.pkg_version))
+            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, srv.pkg_version))
             return False
 
         compare = version_compare(dest_pkg.version, src_pkg.version)
         if compare >= 0:
-            print("Package %s is newer in the target distro. (Version in target: %s, source is %s)" % (package_name, dest_pkg.version, srv.pkg_version))
+            print("Package %s has a newer/equal version in the target distro. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, srv.pkg_version))
             return False
         return True
 
@@ -75,6 +75,13 @@ class SyncPackage:
         ret = self._import_debian_package(src_pkg)
         return ret
 
+    def sync_all_packages(self):
+        for src_pkg in self._pkgs_src.values():
+            if not src_pkg.pkgname in self._pkgs_dest:
+                self._import_debian_package(src_pkg)
+            if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
+                self._import_debian_package(src_pkg)
+
 def main():
     # init Apt, we need it later
     apt_pkg.init()
@@ -83,6 +90,9 @@ def main():
     parser.add_option("-i",
                   action="store_true", dest="import_pkg", default=False,
                   help="import a package")
+    parser.add_option("-a", "--import-all",
+                  action="store_true", dest="sync_everything", default=False,
+                  help="sync all packages with newer versions")
 
     (options, args) = parser.parse_args()
 
@@ -97,8 +107,18 @@ def main():
         package_name = args[3]
         sync.initialize(source_suite, target_suite, component)
         ret = sync.sync_package(package_name)
-	if not ret:
+        if not ret:
             sys.exit(2)
+    elif options.sync_everything:
+        sync = SyncPackage()
+        if len(args) != 3:
+            print("Invalid number of arguments (need source-suite, target-suite, component)")
+            sys.exit(1)
+        source_suite = args[0]
+        target_suite = args[1]
+        component = args[2]
+        sync.initialize(source_suite, target_suite, component)
+        sync.sync_all_packages()
     else:
         print("Run with -h for a list of available command-line options!")
 
