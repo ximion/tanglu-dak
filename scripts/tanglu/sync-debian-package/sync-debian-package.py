@@ -39,6 +39,27 @@ class SyncPackage:
         pkginfo_dest = PackageInfoRetriever(self._momArchivePath, self._destDistro, target_suite)
         self._pkgs_src = pkginfo_src.get_packages_dict(component)
         self._pkgs_dest = pkginfo_dest.get_packages_dict(component)
+        self._pkg_blacklist = self._read_blacklist()
+
+    def _read_blacklist(self):
+        filename = "%s/sync-blacklist.txt" % self._momArchivePath
+        if not os.path.isfile(filename):
+            return []
+
+        bl = []
+        with open(filename) as blacklist:
+            for line in blacklist:
+                try:
+                    line = line[:line.index("#")]
+                except ValueError:
+                    pass
+
+                line = line.strip()
+                if not line:
+                    continue
+
+                bl.append(line)
+        return bl
 
     def _import_debian_package(self, pkg):
         # TODO: Call dak to import the source package
@@ -46,8 +67,9 @@ class SyncPackage:
         return False
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
-        if self._destDistro in dest_pkg.version:
-            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
+        if src_pkg.pkgname in self._pkg_blacklist:
+            if not quiet:
+                print("Package %s is on package-blacklist and cannot be synced!" % (dest_pkg.pkgname))
             return False
 
         compare = version_compare(dest_pkg.version, src_pkg.version)
@@ -55,6 +77,11 @@ class SyncPackage:
             if not quiet:
                 print("Package %s has a newer/equal version in the target distro. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
             return False
+
+        if self._destDistro in dest_pkg.version:
+            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
+            return False
+
         return True
 
     def sync_package(self, package_name):
