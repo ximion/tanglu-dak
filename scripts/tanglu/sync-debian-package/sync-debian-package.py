@@ -94,10 +94,10 @@ class SyncPackage:
                 print("Package %s is on package-blacklist and cannot be synced!" % (src_pkg.pkgname))
             return False
         # check if the package is arch-only for an unsupported arch
-        if " " in pkg.arch:
-            archs = pkg.arch.split(" ")
+        if " " in src_pkg.arch:
+            archs = src_pkg.arch.split(" ")
         else:
-            archs = [pkg.archs]
+            archs = [src_pkg.archs]
         unsupported = True
         for arch in archs:
             if not arch in self._unsupportedArchs:
