@@ -80,6 +80,7 @@ class SyncPackage:
         for src_pkg in self._pkgs_src.values():
             if not src_pkg.pkgname in self._pkgs_dest:
                 self._import_debian_package(src_pkg)
+                continue
             if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
                 self._import_debian_package(src_pkg)
 
