@@ -76,6 +76,7 @@ class SyncPackage:
         p = subprocess.Popen(["dak", "import", "-s", "-a", self._target_suite, self._component, pkg_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
         if p.returncode is not 0:
+            print("ERR: %s", p.communicate()[0])
             raise Exception(p.communicate()[0])
             return False
 
