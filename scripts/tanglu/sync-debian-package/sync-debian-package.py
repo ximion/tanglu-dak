@@ -33,6 +33,11 @@ class SyncPackage:
         self._momArchivePath = parser.get('MOM', 'path')
         self._destDistro = parser.get('SyncTarget', 'distro_name')
 
+        supportedArchs = parser.get('SyncTarget', 'archs').split (" ")
+        self._unsupportedArchs = parser.get('SyncSource', 'archs').split (" ")
+        for arch in supportedArchs:
+            self._unsupportedArchs.remove(arch)
+
     def initialize(self, source_suite, target_suite, component):
         self._sourceSuite = source_suite
         self._component = component
@@ -73,10 +78,11 @@ class SyncPackage:
         pkg_path = self._momArchivePath + "/pool/debian/" + pkg_dir + "/%s_%s.dsc" % (pkg.pkgname, pkg.getVersionNoEpoch())
         print("(Import path: %s)" % (pkg_path))
 
-        p = subprocess.Popen(["dak", "import", "-s", "-a", self._target_suite, self._component, pkg_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = ["dak", "import", "-s", "-a", self._target_suite, self._component, pkg_path]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
         if p.returncode is not 0:
-            print("ERR: %s", p.communicate()[0])
+            print("ERR: %s\n%s" % (cmd, p.communicate()[0]))
             raise Exception(p.communicate()[0])
             return False
 
@@ -87,6 +93,20 @@ class SyncPackage:
             if not quiet:
                 print("Package %s is on package-blacklist and cannot be synced!" % (src_pkg.pkgname))
             return False
+        # check if the package is arch-only for an unsupported arch
+        if " " in pkg.arch:
+            archs = pkg.arch.split(" ")
+        else:
+            archs = [pkg.archs]
+        unsupported = True
+        for arch in archs:
+            if not arch in self._unsupportedArchs:
+                unsupported = False
+                break
+        if unsupported:
+                if not quiet:
+                    print("Package %s is designed for unsupported architectures and cannot be synced (only for %s).!" % (src_pkg.pkgname, archs))
+                return False
         if dest_pkg == None:
             return True
 
