@@ -30,10 +30,10 @@ def noEpoch(version):
         return v
 
 class PackageInfo():
-    def __init__(self, pkgname, pkgversion, dist, component, archs, directory):
+    def __init__(self, pkgname, pkgversion, suite, component, archs, directory):
         self.pkgname = pkgname
         self.version = pkgversion
-        self.dist = dist
+        self.suite = suite
         self.component = component
         self.archs = archs
         self.info = ""
@@ -44,7 +44,7 @@ class PackageInfo():
         return noEpoch(self.version)
 
     def __str__(self):
-        return "PackageInfo_Obj: name: %s | version: %s | dist: %s | comp.: %s | archs: %s" % (self.pkgname, self.version, self.dist, self.component, self.archs)
+        return "PackageInfo_Obj: name: %s | version: %s | suite: %s | comp.: %s | archs: %s" % (self.pkgname, self.version, self.suite, self.component, self.archs)
 
 class PackageInfoRetriever():
     def __init__(self, path, distro, suite):
@@ -63,7 +63,7 @@ class PackageInfoRetriever():
             pkgversion = section['Version']
             pkgname = section['Package']
             directory = section['Directory']
-            pkg = PackageInfo(pkgname, pkgversion, dist, component, archs, directory)
+            pkg = PackageInfo(pkgname, pkgversion, self._suiteName, component, archs, directory)
 
             packageList.append(pkg)
 
