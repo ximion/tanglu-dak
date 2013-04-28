@@ -134,7 +134,7 @@ def takenover_binaries(upload, missing, session):
         rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
-                             filter(DBSource.source != upload.source.source). \
+                             filter(DBSource.source != upload.source). \
                              join(DBBinary.suites). \
                              filter(Suite.suite_name.in_(suites)). \
                              order_by(DBSource.source, DBBinary.package).all()
