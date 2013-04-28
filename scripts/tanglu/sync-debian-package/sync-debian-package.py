@@ -69,8 +69,10 @@ class SyncPackage:
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
         if src_pkg.pkgname in self._pkg_blacklist:
             if not quiet:
-                print("Package %s is on package-blacklist and cannot be synced!" % (dest_pkg.pkgname))
+                print("Package %s is on package-blacklist and cannot be synced!" % (src_pkg.pkgname))
             return False
+        if dest_pkg == None:
+            return True
 
         compare = version_compare(dest_pkg.version, src_pkg.version)
         if compare >= 0:
@@ -91,7 +93,9 @@ class SyncPackage:
         src_pkg = self._pkgs_src[package_name]
 
         if not package_name in self._pkgs_dest:
-            ret = self._import_debian_package(src_pkg)
+            ret = False
+            if self._can_sync_package(src_pkg, None):
+                ret = self._import_debian_package(src_pkg)
             return ret
 
         dest_pkg = self._pkgs_dest[package_name]
@@ -106,7 +110,8 @@ class SyncPackage:
     def sync_all_packages(self):
         for src_pkg in self._pkgs_src.values():
             if not src_pkg.pkgname in self._pkgs_dest:
-                self._import_debian_package(src_pkg)
+                if self._can_sync_package(src_pkg, None, True):
+                    self._import_debian_package(src_pkg)
                 continue
             if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
                 self._import_debian_package(src_pkg)
