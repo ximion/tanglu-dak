@@ -64,22 +64,20 @@ class SyncPackage:
         return bl
 
     def _import_debian_package(self, pkg):
-        # TODO: Call dak to import the source package
         print("Attempt to import package: %s" % (pkg))
-        pkg_path = self._momArchivePath + "/pool/debian/" + pkg.directory + "/%s_%s.dsc" % (pkg.pkgname, pkg.getVersionNoEpoch())
+        # adjust the pkg-dir (we need to remove pool/main, pool/non-free etc. from the string)
+        pkg_dir = pkg.directory
+        if pkg_dir.startswith("pool"):
+            pkg_dir = pkg_dir[pkg_dir.index("/")+1:]
+            pkg_dir = pkg_dir[pkg_dir.index("/")+1:]
+        pkg_path = self._momArchivePath + "/pool/debian/" + pkg_dir + "/%s_%s.dsc" % (pkg.pkgname, pkg.getVersionNoEpoch())
         print("(Import path: %s)" % (pkg_path))
 
-        p = subprocess.Popen(["dak", "import", "-a", "-s", self._target_suite, self._component, pkg_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        resLines = ""
-        while(True):
-          retcode = p.poll()
-          line = p.stdout.readline()
-          resLines += line
-          if (retcode is not None):
-              break
-          if p.returncode is not 0:
-              raise Exception(resLines)
-              return False
+        p = subprocess.Popen(["dak", "import", "-s", "-a", self._target_suite, self._component, pkg_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+        if p.returncode is not 0:
+            raise Exception(p.communicate()[0])
+            return False
         return True
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
