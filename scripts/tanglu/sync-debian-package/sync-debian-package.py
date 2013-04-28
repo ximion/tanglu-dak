@@ -47,12 +47,13 @@ class SyncPackage:
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
         if self._destDistro in dest_pkg.version:
-            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, srv.pkg_version))
+            print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
             return False
 
         compare = version_compare(dest_pkg.version, src_pkg.version)
         if compare >= 0:
-            print("Package %s has a newer/equal version in the target distro. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, srv.pkg_version))
+            if not quiet:
+                print("Package %s has a newer/equal version in the target distro. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
             return False
         return True
 
