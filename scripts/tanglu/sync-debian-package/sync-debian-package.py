@@ -82,8 +82,9 @@ class SyncPackage:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
         if p.returncode is not 0:
-            print("ERR: %s\n%s" % (cmd, p.communicate()[0]))
-            raise Exception(p.communicate()[0])
+            stdout, stderr = p.communicate()
+            print("ERR: %s\n%s %s" % (cmd, stdout, stderr))
+            raise Exception("Error while running dak!")
             return False
 
         return True
