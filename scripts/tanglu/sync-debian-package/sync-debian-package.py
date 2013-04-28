@@ -78,6 +78,7 @@ class SyncPackage:
         if p.returncode is not 0:
             raise Exception(p.communicate()[0])
             return False
+
         return True
 
     def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
@@ -130,6 +131,15 @@ class SyncPackage:
             if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
                 self._import_debian_package(src_pkg)
 
+    def list_all_syncs(self):
+        for src_pkg in self._pkgs_src.values():
+            if not src_pkg.pkgname in self._pkgs_dest:
+                if self._can_sync_package(src_pkg, None, True):
+                    print("Sync: %s" % (src_pkg))
+                continue
+            if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
+                print("Sync: %s" % (src_pkg))
+
 def main():
     # init Apt, we need it later
     apt_pkg.init()
@@ -141,6 +151,9 @@ def main():
     parser.add_option("-a", "--import-all",
                   action="store_true", dest="sync_everything", default=False,
                   help="sync all packages with newer versions")
+    parser.add_option("-l", "--list-syncs",
+                  action="store_true", dest="list_syncs", default=False,
+                  help="list all packages which would be synced")
 
     (options, args) = parser.parse_args()
 
@@ -167,6 +180,16 @@ def main():
         component = args[2]
         sync.initialize(source_suite, target_suite, component)
         sync.sync_all_packages()
+    elif options.list_syncs:
+        sync = SyncPackage()
+        if len(args) != 3:
+            print("Invalid number of arguments (need source-suite, target-suite, component)")
+            sys.exit(1)
+        source_suite = args[0]
+        target_suite = args[1]
+        component = args[2]
+        sync.initialize(source_suite, target_suite, component)
+        sync.list_all_syncs()
     else:
         print("Run with -h for a list of available command-line options!")
 
