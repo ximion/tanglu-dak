@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Copyright (C) 2013 Matthias Klumpp <mak@debian.org>
-
+#
 # Licensed under the GNU Lesser General Public License Version 3
 #
 # This library is free software: you can redistribute it and/or modify
