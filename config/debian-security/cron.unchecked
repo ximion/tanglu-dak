@@ -81,7 +81,7 @@ ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-secu
 
 # export build queues in old format
 # XXX: This should be removed later.
-for suite in stable testing; do
+for suite in oldstable stable; do
     overridecodename=$(dak admin suite show ${suite} | awk '$1 == "OverrideCodename:" { print $2 }')
     rm -rf ${incoming}/${suite}.new
     mkdir ${incoming}/${suite}.new
@@ -115,7 +115,6 @@ if [ "x${dopolicy}x" = "xtruex" ]; then
     #dak generate-filelist
     cd $configdir
     $configdir/map.sh
-    #apt-ftparchive generate apt.conf
     dak generate-packages-sources2 -a security
     dak generate-releases -a security
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh

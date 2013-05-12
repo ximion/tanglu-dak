@@ -57,7 +57,6 @@ from shutil import rmtree
 from yaml import safe_dump
 from daklib.dbconn import *
 from daklib import utils
-from daklib.config import Config
 from daklib.contents import UnpackedSource
 from daklib.regexes import re_no_epoch
 
@@ -214,7 +213,7 @@ def export_files(session, archive, clpool, progress=False):
     for p in unpack.keys():
         package = os.path.splitext(os.path.basename(p))[0].split('_')
         try:
-            unpacked = UnpackedSource(p)
+            unpacked = UnpackedSource(p, clpool)
             tempdir = unpacked.get_root_directory()
             stats['unpack'] += 1
             if progress:
@@ -293,7 +292,6 @@ def generate_export_filelist(clpool):
 
 def main():
     Cnf = utils.get_conf()
-    cnf = Config()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
                  ('a','archive','Make-Changelog::Options::Archive','HasArg'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
@@ -324,9 +322,9 @@ def main():
     session = DBConn().session()
 
     if export:
-        if cnf.exportpath:
-            archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
-            exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
+        archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
+        exportpath = archive.changelog
+        if exportpath:
             export_files(session, archive, exportpath, progress)
             generate_export_filelist(exportpath)
         else:

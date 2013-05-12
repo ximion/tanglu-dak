@@ -9,6 +9,11 @@ function remove_daily_lock() {
     rm -f $LOCK_DAILY
 }
 
+# Remove changelog lock
+function remove_changelog_lock() {
+    rm -f $LOCK_CHANGELOG
+}
+
 # Remove all locks
 function remove_all_locks() {
     rm -f $LOCK_DAILY $LOCK_ACCEPTED
@@ -71,7 +76,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in wheezy sid; do
+                for dir in jessie sid; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after --exclude Translation-en.bz2 --exclude Translation-*.diff/ . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -240,7 +245,7 @@ function mkmaintainers() {
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for ofile in ${overridedir}/override.{squeeze,wheezy,sid}.{,extra.}{main,contrib,non-free}*; do
+    for ofile in ${overridedir}/override.{squeeze,wheezy,jessie,sid}.{,extra.}{main,contrib,non-free}*; do
         bname=${ofile##*/}
         gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
         chmod g+w ${indices}/${bname}.gz
@@ -371,12 +376,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-	    for dist in sid wheezy; do
+	    for dist in sid jessie; do
 		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-wheezy.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz) |
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
@@ -543,12 +548,6 @@ function stats() {
     dak stats pkg-nums > $webdir/pkg-nums
 }
 
-function aptftpcleanup() {
-    log "Clean up apt-ftparchive's databases"
-    cd $configdir
-    apt-ftparchive -q clean apt.conf
-}
-
 function cleantransactions() {
     log "Cleanup transaction ids older than 3 months"
     cd $base/backup/
@@ -614,17 +613,22 @@ EOF
 
 # extract changelogs and stuff
 function changelogs() {
-    log "Extracting changelogs"
-    dak make-changelog -e -a ftp-master
-    mkdir -p ${exportpublic}/changelogs
-    cd ${exportpublic}/changelogs
-    rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-    sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
+    if lockfile -r3 $LOCK_CHANGELOG; then
+        log "Extracting changelogs"
+        dak make-changelog -e -a ftp-master
+        [ -f ${exportdir}/changelogs/filelist.yaml ] && xz -f ${exportdir}/changelogs/filelist.yaml
+        mkdir -p ${exportpublic}/changelogs
+        cd ${exportpublic}/changelogs
+        rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
+        sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
 
-    dak make-changelog -e -a backports
-    mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
-    cd /srv/backports-master.debian.org/rsync/export/changelogs
-    rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
+        dak make-changelog -e -a backports
+        [ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
+        mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
+        cd /srv/backports-master.debian.org/rsync/export/changelogs
+        rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
+        trap remove_changelog_lock EXIT TERM HUP INT QUIT
+    fi
 }
 
 function gitpdiff() {

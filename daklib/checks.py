@@ -375,7 +375,10 @@ class SourceCheck(Check):
 
         version = control['Version']
         if is_orig:
-            version = re_field_version_upstream.match(version).group('upstream')
+            upstream_match = re_field_version_upstream.match(version)
+            if not upstream_match:
+                raise Reject('{0}: Source package includes upstream tarball, but {0} has no Debian revision.'.format(filename, version))
+            version = upstream_match.group('upstream')
         version_match =  re_field_version.match(version)
         version_without_epoch = version_match.group('without_epoch')
         if match.group('version') != version_without_epoch:
@@ -644,7 +647,7 @@ class LintianCheck(Check):
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
 
-            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
+            cmd.extend(['LINTIAN_COLL_UNPACKED_SKIP_SIG=1', '/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
             result, output = commands.getstatusoutput(" ".join(cmd))
         finally:
             os.unlink(temp_filename)

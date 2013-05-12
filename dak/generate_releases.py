@@ -95,20 +95,14 @@ def sign_release_dir(suite, dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
-        # We can only use one key for inline signing so use the first one in
-        # the array for consistency
-        firstkey = True
-
+        defkeyid=""
         for keyid in suite.signingkeys or []:
-            defkeyid = "--default-key %s" % keyid
+            defkeyid += "--local-user %s " % keyid
 
-            os.system("gpg %s %s %s --detach-sign <%s >>%s" %
-                    (keyring, defkeyid, arguments, relname, dest))
-
-            if firstkey:
-                os.system("gpg %s %s %s --clearsign <%s >>%s" %
-                        (keyring, defkeyid, arguments, relname, inlinedest))
-                firstkey = False
+        os.system("gpg %s %s %s --detach-sign <%s >>%s" %
+                  (keyring, defkeyid, arguments, relname, dest))
+        os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                  (keyring, defkeyid, arguments, relname, inlinedest))
 
 class ReleaseWriter(object):
     def __init__(self, suite):
@@ -156,8 +150,10 @@ class ReleaseWriter(object):
             if getattr(suite, dbfield) is not None:
                 # TEMPORARY HACK HACK HACK until we change the way we store the suite names etc
                 if key == 'Suite' and getattr(suite, dbfield) == 'squeeze-updates':
-                    out.write("Suite: stable-updates\n")
+                    out.write("Suite: oldstable-updates\n")
                 elif key == 'Suite' and getattr(suite, dbfield) == 'wheezy-updates':
+                    out.write("Suite: stable-updates\n")
+                elif key == 'Suite' and getattr(suite, dbfield) == 'jessie-updates':
                     out.write("Suite: testing-updates\n")
                 else:
                     out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
@@ -176,7 +172,7 @@ class ReleaseWriter(object):
 
         components = [ c.component_name for c in session.query(Component) ]
 
-        out.write("Components: %s\n" % ( " ".join(map(lambda x: "%s%s" % (suite_suffix, x), components ))))
+        out.write("Components: %s\n" % (" ".join(components)))
 
         # For exact compatibility with old g-r, write out Description here instead
         # of with the rest of the DB fields above

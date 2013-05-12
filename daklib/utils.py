@@ -65,7 +65,6 @@ from collections import defaultdict
 ################################################################################
 
 default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
@@ -788,20 +787,6 @@ def which_conf_file ():
         return Cnf["Config::" + res + "::DakConfig"]
 
     return default_config
-
-def which_apt_conf_file ():
-    res = socket.getfqdn()
-    # In case we allow local config files per user, try if one exists
-    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.read_config_file_isc(Cnf,default_config)
-
-    if Cnf.get("Config::" + res + "::AptConfig"):
-        return Cnf["Config::" + res + "::AptConfig"]
-    else:
-        return default_apt_config
 
 def which_alias_file():
     hostname = socket.getfqdn()
