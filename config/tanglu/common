@@ -27,6 +27,8 @@ function jenkins_trigger() {
     # trigger update of Jenkins package build database
     echo "Trigger Jenkins..."
     maintain-jenkins-jobs --update
+    echo "Checking for buildable packages..."
+    maintain-jenkins-jobs --checkbuild
 }
 
 # used by cron.dinstall *and* cron.unchecked.
