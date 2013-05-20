@@ -33,9 +33,9 @@ class SyncPackage:
         self._momArchivePath = parser.get('MOM', 'path')
         self._destDistro = parser.get('SyncTarget', 'distro_name')
 
-        supportedArchs = parser.get('SyncTarget', 'archs').split (" ")
+        self._supportedArchs = parser.get('SyncTarget', 'archs').split (" ")
         self._unsupportedArchs = parser.get('SyncSource', 'archs').split (" ")
-        for arch in supportedArchs:
+        for arch in self._supportedArchs:
             self._unsupportedArchs.remove(arch)
 
     def initialize(self, source_suite, target_suite, component):
@@ -99,12 +99,13 @@ class SyncPackage:
             archs = src_pkg.archs.split(" ")
         else:
             archs = [src_pkg.archs]
-        unsupported = True
-        for arch in archs:
-            if not arch in self._unsupportedArchs:
-                unsupported = False
-                break
-        if unsupported:
+        supported = False
+        for arch in self._supportedArchs:
+                if ('any' in archs) or ('linux-any' in archs) or (("any-"+arch) in archs) or (arch in archs):
+                    supported = True
+        if ("all" in archs):
+                supported = True
+        if not supported:
                 if not quiet:
                     print("Package %s is designed for unsupported architectures and cannot be synced (only for %s).!" % (src_pkg.pkgname, archs))
                 return False
