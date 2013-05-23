@@ -432,7 +432,7 @@ def validate_sources(suite, component):
 
     filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
-    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
@@ -476,7 +476,7 @@ def validate_packages(suite, component, architecture):
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
                % (cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
-    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
