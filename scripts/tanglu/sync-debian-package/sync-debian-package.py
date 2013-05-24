@@ -89,7 +89,7 @@ class SyncPackage:
 
         return True
 
-    def _can_sync_package(self, src_pkg, dest_pkg, quiet=False):
+    def _can_sync_package(self, src_pkg, dest_pkg, quiet=False, forceSync=False):
         if src_pkg.pkgname in self._pkg_blacklist:
             if not quiet:
                 print("Package %s is on package-blacklist and cannot be synced!" % (src_pkg.pkgname))
@@ -118,13 +118,13 @@ class SyncPackage:
                 print("Package %s has a newer/equal version in the target distro. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
             return False
 
-        if self._destDistro in dest_pkg.version:
+        if (self._destDistro in dest_pkg.version) and (not forceSync):
             print("Package %s contains Tanglu-specific modifications. Please merge the package instead of syncing it. (Version in target: %s, source is %s)" % (dest_pkg.pkgname, dest_pkg.version, src_pkg.version))
             return False
 
         return True
 
-    def sync_package(self, package_name):
+    def sync_package(self, package_name, force=False):
         if not package_name in self._pkgs_src:
             print("Cannot sync %s, package doesn't exist in Debian (%s/%s)!" % (package_name, self._sourceSuite, self._component))
             return False
@@ -138,7 +138,7 @@ class SyncPackage:
 
         dest_pkg = self._pkgs_dest[package_name]
 
-        if not self._can_sync_package(src_pkg, dest_pkg):
+        if not self._can_sync_package(src_pkg, dest_pkg, forceSync=force):
             return False
 
         # we can now sync the package
@@ -171,6 +171,9 @@ def main():
     parser.add_option("-i",
                   action="store_true", dest="import_pkg", default=False,
                   help="import a package")
+    parser.add_option("--force",
+                  action="store_true", dest="force_import", default=False,
+                  help="enforce the import of a package")
     parser.add_option("-a", "--import-all",
                   action="store_true", dest="sync_everything", default=False,
                   help="sync all packages with newer versions")
@@ -190,7 +193,7 @@ def main():
         component = args[2]
         package_name = args[3]
         sync.initialize(source_suite, target_suite, component)
-        ret = sync.sync_package(package_name)
+        ret = sync.sync_package(package_name, force=options.force_import)
         if not ret:
             sys.exit(2)
     elif options.sync_everything:
