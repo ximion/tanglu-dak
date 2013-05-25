@@ -51,11 +51,12 @@ $dakdir/tools-tanglu/removals.pl $configdir/removalsrss.rc > $webdir/rss/removal
 $scriptsdir/generate-d-i
 
 # do the buildd key updates
-BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
-exec >> "${BUILDDFUN}" 2>&1
-${scriptsdir}/buildd-remove-keys
-${scriptsdir}/buildd-add-keys
-${scriptsdir}/buildd-prepare-dir
+# FIXME-TANGLU: Find a better way to do this or adjust the scripts
+ #BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
+ #exec >> "${BUILDDFUN}" 2>&1
+ #${scriptsdir}/buildd-remove-keys
+ #${scriptsdir}/buildd-add-keys
+ #${scriptsdir}/buildd-prepare-dir
 
 for keyring in $(dak admin k list-binary); do
     dak import-keyring --generate-users "%s" ${keyring}

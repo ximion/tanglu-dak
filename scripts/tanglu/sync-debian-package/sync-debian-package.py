@@ -233,7 +233,7 @@ def main():
     elif options.list_nodebian:
         sync = SyncPackage()
         if len(args) != 3:
-            print("Invalid number of arguments (need source-suite, target-suite, component)")
+            print("Invalid number of arguments (need debian-suite, distro-suite, component)")
             sys.exit(1)
         source_suite = args[0]
         target_suite = args[1]
