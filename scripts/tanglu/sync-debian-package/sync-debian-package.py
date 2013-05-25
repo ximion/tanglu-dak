@@ -163,6 +163,17 @@ class SyncPackage:
             if self._can_sync_package(src_pkg, self._pkgs_dest[src_pkg.pkgname], True):
                 print("Sync: %s" % (src_pkg))
 
+    def list_not_in_debian(self):
+        debian_pkg_list = self._pkgs_src.values()
+        dest_pkg_list = self._pkgs_dest.keys()
+        for src_pkg in debian_pkg_list:
+            pkgname = src_pkg.pkgname
+            if pkgname in dest_pkg_list:
+                dest_pkg_list.remove(pkgname)
+                continue
+        for pkgname in dest_pkg_list:
+            print(pkgname)
+
 def main():
     # init Apt, we need it later
     apt_pkg.init()
@@ -180,6 +191,9 @@ def main():
     parser.add_option("-l", "--list-syncs",
                   action="store_true", dest="list_syncs", default=False,
                   help="list all packages which would be synced")
+    parser.add_option("--list-not-in-debian",
+                  action="store_true", dest="list_nodebian", default=False,
+                  help="show a list of packages which are not in Debian")
 
     (options, args) = parser.parse_args()
 
@@ -216,6 +230,16 @@ def main():
         component = args[2]
         sync.initialize(source_suite, target_suite, component)
         sync.list_all_syncs()
+    elif options.list_nodebian:
+        sync = SyncPackage()
+        if len(args) != 3:
+            print("Invalid number of arguments (need source-suite, target-suite, component)")
+            sys.exit(1)
+        source_suite = args[0]
+        target_suite = args[1]
+        component = args[2]
+        sync.initialize(source_suite, target_suite, component)
+        sync.list_not_in_debian()
     else:
         print("Run with -h for a list of available command-line options!")
 
