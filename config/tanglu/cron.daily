@@ -14,11 +14,11 @@ dak clean-suites -m 10000
 dak clean-queues
 
 # Send a report on NEW/BYHAND packages
-dak queue-report -d new,proposedupdates | mail -e -s "Tanglu NEW and BYHAND on $(date +%D)" matthias@tenstral.net
-# and one on crufty packages
+dak queue-report -d new,byhand | mail -e -s "Tanglu NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.tanglu.org
 
+# and one on crufty packages
 dak cruft-report -R --mode bdo -s aequorea > $webdir/cruft-report-daily.txt
-cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu Aequorea archive cruft report for $(date +%D)" matthias@tenstral.net
+cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu Aequorea archive cruft report for $(date +%D)" mak@debian.org
 
 # sync the Tanglu bug database
 $scriptsdir/dak-trac-bridge.py
