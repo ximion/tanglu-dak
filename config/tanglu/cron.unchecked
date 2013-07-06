@@ -73,6 +73,10 @@ function do_buildd () {
                 cat override.aequorea.$i.src >> override.aequorea.all3.src
             fi
         done
+        cd $exportdir
+        # export list of source-maintainers
+        dak make-maintainers -s -p -a janus > SourceMaintainers
+
         # FIXME-TANGLU: We don't use this in Tanglu
         #make_buildd_dir
         jenkins_trigger
