@@ -110,11 +110,11 @@ class DebVersion(UserDefinedType):
         return None
 
 sa_major_version = sqlalchemy.__version__[0:3]
-if sa_major_version in ["0.5", "0.6", "0.7"]:
+if sa_major_version in ["0.5", "0.6", "0.7", "0.8"]:
     from sqlalchemy.databases import postgres
     postgres.ischema_names['debversion'] = DebVersion
 else:
-    raise Exception("dak only ported to SQLA versions 0.5 to 0.7.  See daklib/dbconn.py")
+    raise Exception("dak only ported to SQLA versions 0.5 to 0.8.  See daklib/dbconn.py")
 
 ################################################################################
 
@@ -1250,8 +1250,22 @@ class Keyring(object):
 
         LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
         LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
+        ca_cert_file = cnf.get('Import-LDAP-Fingerprints::CACertFile')
 
         l = ldap.open(LDAPServer)
+
+        if ca_cert_file:
+            # TODO: This should request a new context and use
+            # connection-specific options (i.e. "l.set_option(...)")
+
+            # Request a new TLS context. If there was already one, libldap
+            # would not change the TLS options (like which CAs to trust).
+            #l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+            #ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, None)
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+            l.start_tls_s()
+
         l.simple_bind_s("","")
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
@@ -2892,7 +2906,7 @@ class DBConn(object):
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if cnf.has_key('DB::MaxOverflow'):
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
-        if sa_major_version in ('0.6', '0.7') and cnf.has_key('DB::Unicode') and \
+        if sa_major_version != '0.5' and cnf.has_key('DB::Unicode') and \
             cnf['DB::Unicode'] == 'false':
             engine_args['use_native_unicode'] = False
 

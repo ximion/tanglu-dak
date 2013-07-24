@@ -1061,14 +1061,26 @@ class ArchiveUpload(object):
 
         remaining = []
         for f in byhand:
-            parts = f.filename.split('_', 2)
-            if len(parts) != 3:
-                print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
-                remaining.append(f)
-                continue
+            if '_' in f.filename:
+                parts = f.filename.split('_', 2)
+                if len(parts) != 3:
+                    print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                    remaining.append(f)
+                    continue
 
-            package, version, archext = parts
-            arch, ext = archext.split('.', 1)
+                package, version, archext = parts
+                arch, ext = archext.split('.', 1)
+            else:
+                parts = f.filename.split('.')
+                if len(parts) < 2:
+                    print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                    remaining.append(f)
+                    continue
+
+                package = parts[0]
+                version = '0'
+                arch = 'all'
+                ext = parts[-1]
 
             try:
                 rule = automatic_byhand_packages.subtree(package)
@@ -1076,7 +1088,9 @@ class ArchiveUpload(object):
                 remaining.append(f)
                 continue
 
-            if rule['Source'] != self.changes.source_name or rule['Section'] != f.section or rule['Extension'] != ext:
+            if rule['Source'] != self.changes.source_name \
+                    or rule['Section'] != f.section \
+                    or ('Extension' in rule and rule['Extension'] != ext):
                 remaining.append(f)
                 continue
 

@@ -328,7 +328,7 @@ class BinaryTimestampCheck(Check):
     def check(self, upload):
         cnf = Config()
         future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24*3600)
-        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1984'), '%Y'))
+        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1975'), '%Y'))
 
         class TarTime(object):
             def __init__(self):
@@ -336,9 +336,9 @@ class BinaryTimestampCheck(Check):
                 self.past_files = dict()
             def callback(self, member, data):
                 if member.mtime > future_cutoff:
-                    future_files[member.name] = member.mtime
+                    self.future_files[member.name] = member.mtime
                 elif member.mtime < past_cutoff:
-                    past_files[member.name] = member.mtime
+                    self.past_files[member.name] = member.mtime
 
         def format_reason(filename, direction, files):
             reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
@@ -443,7 +443,7 @@ class ACLCheck(Check):
                 .filter(DBBinary.package == binary_name)
             for binary in binaries:
                 if binary.source.source != upload.changes.changes['Source']:
-                    return True, binary, binary.source.source
+                    return True, binary.package, binary.source.source
         return False, None, None
 
     def _check_acl(self, session, upload, acl):
@@ -709,23 +709,31 @@ class VersionCheck(Check):
         else:
             return db_binary.version
 
-    def _version_checks(self, upload, suite, op):
+    def _version_checks(self, upload, suite, other_suite, op, op_name):
         session = upload.session
 
         if upload.changes.source is not None:
             source_name = upload.changes.source.dsc['Source']
             source_version = upload.changes.source.dsc['Version']
-            v = self._highest_source_version(session, source_name, suite)
+            v = self._highest_source_version(session, source_name, other_suite)
             if v is not None and not op(version_compare(source_version, v)):
-                raise Reject('Version check failed (source={0}, version={1}, other-version={2}, suite={3})'.format(source_name, source_version, v, suite.suite_name))
+                raise Reject("Version check failed:\n"
+                             "Your upload included the source package {0}, version {1},\n"
+                             "however {3} already has version {2}.\n"
+                             "Uploads to {5} must have a {4} version than present in {3}."
+                             .format(source_name, source_version, v, other_suite.suite_name, op_name, suite.suite_name))
 
         for binary in upload.changes.binaries:
             binary_name = binary.control['Package']
             binary_version = binary.control['Version']
             architecture = binary.control['Architecture']
-            v = self._highest_binary_version(session, binary_name, suite, architecture)
+            v = self._highest_binary_version(session, binary_name, other_suite, architecture)
             if v is not None and not op(version_compare(binary_version, v)):
-                raise Reject('Version check failed (binary={0}, version={1}, other-version={2}, suite={3})'.format(binary_name, binary_version, v, suite.suite_name))
+                raise Reject("Version check failed:\n"
+                             "Your upload included the binary package {0}, version {1}, for {2},\n"
+                             "however {4} already has version {3}.\n"
+                             "Uploads to {6} must have a {5} version than present in {4}."
+                             .format(binary_name, binary_version, architecture, v, other_suite.suite_name, op_name, suite.suite_name))
 
     def per_suite_check(self, upload, suite):
         session = upload.session
@@ -737,13 +745,13 @@ class VersionCheck(Check):
         must_be_newer_than.append(suite)
 
         for s in must_be_newer_than:
-            self._version_checks(upload, s, lambda result: result > 0)
+            self._version_checks(upload, suite, s, lambda result: result > 0, 'higher')
 
         vc_older = session.query(dbconn.VersionCheck).filter_by(suite=suite, check='MustBeOlderThan')
         must_be_older_than = [ vc.reference for vc in vc_older ]
 
         for s in must_be_older_than:
-            self._version_checks(upload, s, lambda result: result < 0)
+            self._version_checks(upload, suite, s, lambda result: result < 0, 'lower')
 
         return True
 

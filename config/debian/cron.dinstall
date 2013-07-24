@@ -226,6 +226,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="backports_policy"
+    TIME="backports-policy"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
+GO=(
     FUNC="cruft"
     TIME="cruft"
     ARGS=""
@@ -312,14 +320,6 @@ stage $GO
 GO=(
     FUNC="dakcleanup"
     TIME="cleanup"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="buildd_dir"
-    TIME="buildd_dir"
     ARGS=""
     ERR=""
 )
@@ -439,6 +439,14 @@ stage $GO &
 GO=(
     FUNC="mirrorpush"
     TIME="mirrorpush"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+GO=(
+    FUNC="mirrorpush-backports"
+    TIME="mirrorpush-backports"
     ARGS=""
     ERR="false"
 )

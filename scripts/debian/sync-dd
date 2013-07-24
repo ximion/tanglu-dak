@@ -52,10 +52,7 @@ mode="${4}"
 extra1=""
 
 case "${mode}" in
-    sync)
-        extra1="${extra1} --exclude /ftp/"
-	;;
-    pool)
+    pool|sync)
 	;;
     *)
 	echo "Unknown mode ${mode}." >&2
@@ -72,14 +69,18 @@ trap cleanup EXIT TERM HUP INT QUIT
 if lockfile -r3 "${lockfile}"; then
     rsync -aH -B8192 \
 	${extra1} \
+        --exclude "/.nobackup" \
         --exclude "/backup/*.xz" \
 	--exclude "/backup/dump*" \
+        --exclude "/build-queues/" \
 	--exclude "/database/*.db" \
 	--exclude ".da-backup.trace" \
+        --exclude "/ftp" \
 	--exclude "lost+found" \
 	--exclude "/lock/" \
-	--exclude "/mirror/" \
+        --exclude "/mirror" \
 	--exclude "/morgue/" \
+        --exclude "/queue/bts_version_track/" \
 	--exclude "/queue/unchecked/" \
 	--exclude "/s3kr1t" \
 	--exclude "/scripts/s3kr1t" \
@@ -92,6 +93,7 @@ if lockfile -r3 "${lockfile}"; then
    # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
    rsync -aH -B8192 \
+       --exclude "/.nobackup" \
        --exclude mirror \
        --exclude rsync/ \
        --exclude lost+found \
@@ -103,18 +105,6 @@ if lockfile -r3 "${lockfile}"; then
        /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
    # command for the remote side:
    # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
-
-   if [[ ${mode} == pool ]]; then
-       # Sync backports
-       rsync -aH -B8192 \
-           --delete --delete-after \
-           --timeout 3600 \
-           -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-           /srv/backports-master.debian.org/mirror/ \
-           ries-sync3:/srv/backports.debian.org/htdocs/debian-backports/
-       # And now tell static.debian.org that something changed
-       /usr/local/bin/static-update-component backports.debian.org
-   fi
 else
     echo "Couldn't get the lock, not syncing"
     exit 0
