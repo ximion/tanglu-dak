@@ -173,6 +173,9 @@ function release() {
     for archive in "${public_archives[@]}"; do
         dak generate-releases -a "${archive}"
     done
+
+    # sync the public ftp mirror (by syncing dists, the pool/ dir is symlinked)
+    rsync -aqH --delete $ftpdir/dists $public_ftpdir/
 }
 
 function dakcleanup() {
