@@ -719,7 +719,7 @@ def main ():
 
     # Checks based on the Packages files
     check_components = components[:]
-    if suite_name != "experimental":
+    if suite_name != "staging":
         check_components.append('main/debian-installer');
 
     for component in check_components:
@@ -786,7 +786,7 @@ def main ():
                 add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
 
     if "nviu" in checks:
-        do_newer_version('unstable', 'experimental', 'NVIU', session)
+        do_newer_version('aequorea', 'staging', 'NVIU', session)
 
     if "nvit" in checks:
         do_newer_version('testing', 'testing-proposed-updates', 'NVIT', session)
