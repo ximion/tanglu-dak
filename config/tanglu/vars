@@ -21,6 +21,7 @@ stagedir=$lockdir/stages
 overridedir=$scriptdir/override
 extoverridedir=$scriptdir/external-overrides
 logdir=$base/log/cron
+dbbackupdir=$base/backup/db_full
 
 queuedir=$base/queue
 unchecked=/pub/ftp/incoming

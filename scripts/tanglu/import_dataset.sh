@@ -49,6 +49,14 @@ esac
 # Change to a known safe location
 cd $masterdir
 
+echo "Createing database backup..."
+NOW=$(date "+%Y%m%d%H%M")
+pg_dump projectb > $dbbackupdir/dump_$(date +%Y.%m.%d-%H:%M:%S)
+# remove old backups
+cd $dbbackupdir
+find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'dump_*' -delete
+cd /tmp
+
 echo "Importing new data for ${IMPORTSUITE} into database"
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
@@ -59,7 +67,6 @@ fi
 dak control-suite --set ${IMPORTSUITE} ${BRITNEY} < ${INPUTFILE}
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
-    NOW=$(date "+%Y%m%d%H%M")
     cd ${ftpdir}/dists/${IMPORTSUITE}/
     mv ChangeLog ChangeLog.${NOW}
     ln -s ChangeLog.${NOW} ChangeLog
