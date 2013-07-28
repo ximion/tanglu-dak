@@ -35,7 +35,7 @@ BRITNEY=""
 case "${IMPORTSUITE}" in
     aequorea)
         # What file we look at.
-        INPUTFILE="/var/archive-kit/britney2/output/HeidiResult"
+        INPUTFILE="/var/archive-kit/britney2/var/Heidi/set/current"
         DO_CHANGELOG="true"
         ;;
     *)
@@ -54,7 +54,8 @@ if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     BRITNEY=" --britney"
 fi
 
-dak control-suite --set ${IMPORTSUITE} ${BRITNEY} < ${INPUTFILE}
+# should be --set, but we use --add for safety now - should be changed later if testing has completed
+dak control-suite --add ${IMPORTSUITE} ${BRITNEY} < ${INPUTFILE}
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     NOW=$(date "+%Y%m%d%H%M")
