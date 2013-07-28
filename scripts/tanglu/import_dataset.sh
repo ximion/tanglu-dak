@@ -46,6 +46,8 @@ case "${IMPORTSUITE}" in
         ;;
 esac
 
+echo "Importing dataset..."
+
 # Change to a known safe location
 cd $masterdir
 
@@ -55,7 +57,7 @@ pg_dump projectb > $dbbackupdir/dump_$(date +%Y.%m.%d-%H:%M:%S)
 # remove old backups
 cd $dbbackupdir
 find . -maxdepth 1 -mindepth 1 -type f -mmin +2880 -name 'dump_*' -delete
-cd /tmp
+cd $masterdir
 
 echo "Importing new data for ${IMPORTSUITE} into database"
 
