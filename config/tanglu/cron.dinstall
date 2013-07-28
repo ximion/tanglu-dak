@@ -174,13 +174,15 @@ GO=(
 )
 stage $GO &
 
-GO=(
-    FUNC="pg_timestamp"
-    TIME="pg_dump1"
-    ARGS="predinstall"
-    ERR=""
-)
-stage $GO
+# FIXME-TANGLU: Disabled for now, we don't have an advanced backup service (just a pretty simple one)
+# might be useful later.
+#GO=(
+#    FUNC="pg_timestamp"
+#    TIME="pg_dump1"
+#    ARGS="predinstall"
+#    ERR=""
+#)
+#stage $GO
 
 GO=(
     FUNC="updates"
@@ -367,13 +369,15 @@ GO=(
 )
 stage $GO &
 
-GO=(
-    FUNC="pg_timestamp"
-    TIME="pg_dump2"
-    ARGS="postdinstall"
-    ERR=""
-)
-stage $GO
+# FIXME-TANGLU: Disabled for now, we don't have an advanced backup service (just a pretty simple one)
+# might be useful later.
+#GO=(
+#    FUNC="pg_timestamp"
+#    TIME="pg_dump2"
+#    ARGS="postdinstall"
+#    ERR=""
+#)
+#stage $GO
 
 GO=(
     FUNC="expire"
