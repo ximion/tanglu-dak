@@ -49,7 +49,7 @@ esac
 # Change to a known safe location
 cd $masterdir
 
-echo "Createing database backup..."
+echo "Creating database backup..."
 NOW=$(date "+%Y%m%d%H%M")
 pg_dump projectb > $dbbackupdir/dump_$(date +%Y.%m.%d-%H:%M:%S)
 # remove old backups
