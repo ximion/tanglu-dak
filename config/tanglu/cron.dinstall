@@ -330,13 +330,14 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="mkfilesindices"
-    TIME="mkfilesindices"
-    ARGS=""
-    ERR=""
-)
-stage $GO
+# TANGLU: We don't generate indices
+#GO=(
+#    FUNC="mkfilesindices"
+#    TIME="mkfilesindices"
+#    ARGS=""
+#    ERR=""
+#)
+#stage $GO
 
 # FIXME-TANGLU: Disabled, needs more work...
 #GO=(
