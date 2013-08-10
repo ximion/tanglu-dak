@@ -496,7 +496,9 @@ function stats() {
     log "Updating stats data"
     cd $configdir
     $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
-    R --slave --vanilla < $base/misc/ftpstats.R
+    # TANGLU-FIXME: update-ftpstats does not return useful data (or any data) yet.
+    # therefore, the R code will crash. This needs to be fixed later.
+    # R --slave --vanilla < $base/misc/ftpstats.R
     dak stats arch-space > $webdir/arch-space
     dak stats pkg-nums > $webdir/pkg-nums
 }
