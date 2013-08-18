@@ -176,6 +176,8 @@ function release() {
 
     # sync the public ftp mirror (by syncing dists, the pool/ dir is symlinked)
     rsync -aqH --delete $ftpdir/dists $public_ftpdir/
+    touch $public_ftpdir/pool
+    touch $public_ftpdir
 }
 
 function dakcleanup() {
