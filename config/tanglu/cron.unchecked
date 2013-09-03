@@ -84,10 +84,7 @@ function do_buildd () {
 
 function do_dists () {
     cd $configdir
-    # aequorea next
     dak generate-packages-sources2 -s staging > /dev/null
-    # TODO: We can remove rebuilding of the aequorea distribution very soon
-    dak generate-packages-sources2 -s aequorea > /dev/null
     release
 }
 
