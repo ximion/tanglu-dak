@@ -180,6 +180,15 @@ function release() {
     touch $public_ftpdir
 }
 
+function release_staging() {
+    dak generate-releases -s staging
+
+    # sync the public ftp mirror (by syncing dists, the pool/ dir is symlinked)
+    rsync -aqH --delete $ftpdir/dists $public_ftpdir/
+    touch $public_ftpdir/pool
+    touch $public_ftpdir
+}
+
 function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
