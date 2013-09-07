@@ -23,6 +23,7 @@ import apt_pkg
 import os
 import re
 import tempfile
+import subprocess
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -83,6 +84,8 @@ class CommandFile(object):
                     self.action_dm_remove(self.fingerprint, section, session)
                 elif action == 'dm-migrate':
                     self.action_dm_migrate(self.fingerprint, section, session)
+                elif action == 'sync':
+                    self.action_sync_package(self.fingerprint, section, session)
                 elif action == 'break-the-archive':
                     self.action_break_the_archive(self.fingerprint, section, session)
                 else:
@@ -315,6 +318,39 @@ class CommandFile(object):
         self.result.append('Migrated {0} to {1}.\n{2} acl entries changed.'.format(fpr_hash_from, fpr_hash_to, count))
 
         session.commit()
+
+    def action_sync_package(self, fingerprint, section, session):
+        cnf = Config()
+
+        allowed_keyrings = cnf.value_list('Command::Sync::AdminKeyrings')
+        if fingerprint.keyring.keyring_name not in allowed_keyrings:
+            raise CommandError('Key {0} is not allowed to sync Debian packages.'.format(fingerprint.fingerprint))
+
+        if 'Packages' not in section or 'Suite' not in section or 'Component' not in section:
+                raise CommandError('Invalid commands: Section is missing.')
+
+        packages_str = section['Packages']
+        suite = section['Suite']
+        component = section['Component']
+
+        if " " in packages_str:
+            packages = packages_str.split(" ")
+        else:
+            packages = [packages_str]
+
+        for pkg in packages:
+            p = subprocess.Popen(["sync-debian-package", "-i", suite, "staging", component, pkg], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+            output = p.communicate()
+            if p.returncode is not 0:
+                self.result.append("Failed syncing: {0} from {1} ({2})".format(pkg, suite, component))
+                out_str = ""
+                if output[0] != None:
+                    out_str = output[0]
+                if output[1] != None:
+                    out_str += output[1]
+                self.result.append(" - Error: {0}".format(out_str))
+            else:
+                self.result.append("Synced package: {0} from {1} ({2})".format(pkg, suite, component))
 
     def action_break_the_archive(self, fingerprint, section, session):
         name = 'Dave'
