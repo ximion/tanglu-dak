@@ -115,6 +115,7 @@ class DakBzBridge:
 
 if __name__ == '__main__':
     dakbz = DakBzBridge()
+    print("Updating Bugzilla.")
     dakbz.refreshBzTangluComponentList()
 
     print("Done.")
