@@ -67,7 +67,7 @@ class DakBzBridge:
 
             pkg = PackageInfo(pkgname, pkgversion, dist, component)
 
-            pkg.info = ("Maintainer: <i>%s</i>\n<br>Co-Maintainers: <i>%s</i>\n<br><a href=\"%s\">VCS-Browser</a>" %
+            pkg.info = ("Maintainer: <i>%s</i>\n<br>Co-Maintainers: <i>%s</i><br>\nVCS-Browser: %s" %
                         (section['Maintainer'], section.get('Uploaders', 'Nobody'), section.get('Vcs-Browser', '#')))
 
             packageList += [pkg]
