@@ -1,0 +1,77 @@
+#!/bin/bash
+# quickly publish archive contents
+# NOTE: This script should only be used for testing/debugging!
+# Don't use it because you're impatient and don't want to wait
+# for a dinstall run
+
+# exit on errors
+set -e
+set -o pipefail
+# make sure to only use defined variables
+set -u
+# ERR traps should be inherited from functions too. (And command
+# substitutions and subshells and whatnot, but for us the functions is
+# the important part here)
+set -E
+
+# import the general variable set.
+export SCRIPTVARS=/srv/dak/config/tanglu/vars
+. $SCRIPTVARS
+
+LOCKDAILY=""
+LOCKFILE="$lockdir/unchecked.lock"
+LOCK_NEW="$lockdir/processnew.lock"
+NOTICE="$lockdir/daily.lock"
+LOCK_BUILDD="$lockdir/buildd.lock"
+
+# our name
+PROGRAM="fastpublish"
+
+if [ -e $NOTICE ]; then
+    exit 0;
+fi
+
+########################################################################
+# Functions                                                            #
+########################################################################
+# common functions are "outsourced"
+. "${configdir}/common"
+
+# source the dinstall functions
+. "${configdir}/dinstall.functions"
+
+STAMP=$(date "+%Y%m%d%H%M")
+
+cleanup() {
+    rm -f "$LOCKFILE"
+    if [ ! -z "$LOCKDAILY" ]; then
+        rm -f "$NOTICE"
+    fi
+}
+
+function do_dists () {
+    cd $configdir
+    dak generate-packages-sources2 -s staging > /dev/null
+    dak generate-packages-sources2 -s aequorea > /dev/null
+    release
+}
+
+########################################################################
+# the actual unchecked functions follow                                #
+########################################################################
+
+# And use one locale, no matter what the caller has set
+export LANG=C
+export LC_ALL=C
+
+# only run one fastpublish
+if ! lockfile -r8 $LOCKFILE; then
+    echo "aborting fastpublish because $LOCKFILE has already been locked"
+    exit 0
+fi
+trap cleanup 0
+
+do_dists
+
+dak contents -l 10000 scan-binary
+dak contents -l 1000 scan-source
