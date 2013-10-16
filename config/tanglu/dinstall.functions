@@ -158,6 +158,14 @@ function pdiff() {
     dak generate-index-diffs
 }
 
+function mirror() {
+    local archiveroot
+
+    archiveroot="$(get_archiveroot "janus")"
+    cd $public_ftpdir
+    rsync -aH --link-dest ${archiveroot} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${archiveroot}/. ./tanglu
+}
+
 function release() {
     # XXX: disable once we can remove i18n/Index (#649314)
     # FIXME-TANGLU: Disabled for now, i18n does not work properly yet
@@ -174,19 +182,15 @@ function release() {
         dak generate-releases -a "${archive}"
     done
 
-    # sync the public ftp mirror (by syncing dists, the pool/ dir is symlinked)
-    rsync -aqH --delete $ftpdir/dists $public_ftpdir/
-    touch $public_ftpdir/pool
-    touch $public_ftpdir
+    # sync the public ftp mirror
+    mirror
 }
 
 function release_staging() {
     dak generate-releases -s staging
 
-    # sync the public ftp mirror (by syncing dists, the pool/ dir is symlinked)
-    rsync -aqH --delete $ftpdir/dists $public_ftpdir/
-    touch $public_ftpdir/pool
-    touch $public_ftpdir
+    # sync the public ftp mirror
+    mirror
 }
 
 function dakcleanup() {
@@ -394,23 +398,6 @@ function mkchecksums() {
     ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
     ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
     ${bindir}/dsync-flist -q link-dups $dsynclist || true
-}
-
-function mirror() {
-    log "Regenerating \"public\" mirror/ hardlink fun"
-#    DATE_SERIAL=$(date +"%Y%m%d01")
-#    FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
-#    if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
-#        SERIAL="$DATE_SERIAL"
-#    else
-#        SERIAL="$FILESOAPLUS1"
-#    fi
-#    date -u > ${TRACEFILE}
-#    echo "Using dak v1" >> ${TRACEFILE}
-#    echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
-#    echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
-#    cd ${mirrordir}
-#    rsync -aH --link-dest ${ftpdir} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${ftpdir}/. .
 }
 
 function expire() {
@@ -625,4 +612,3 @@ function gitpdiff() {
     git commit -m "Commit of ${COMD}"
     git tag "${TAGD}"
  }
-
