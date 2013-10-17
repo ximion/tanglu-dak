@@ -181,16 +181,10 @@ function release() {
     for archive in "${public_archives[@]}"; do
         dak generate-releases -a "${archive}"
     done
-
-    # sync the public ftp mirror
-    mirror
 }
 
 function release_staging() {
     dak generate-releases -s staging
-
-    # sync the public ftp mirror
-    mirror
 }
 
 function dakcleanup() {
