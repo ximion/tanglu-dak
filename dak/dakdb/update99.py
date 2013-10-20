@@ -2,10 +2,11 @@
 # coding=utf8
 
 """
-Remove obsolete functions
+Add component ordering
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2013, Ansgar Burchardt <ansgar@debian.org>
+@copyright: 2012 Varnish Software AS
+@author: Tollef Fog Heen <tfheen@varnish-software.com>
 @license: GNU General Public License version 2 or later
 """
 
@@ -30,17 +31,17 @@ from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
 
 statements = [
-    'DROP FUNCTION IF EXISTS bin_associations_id_max()',
-    'DROP FUNCTION IF EXISTS binaries_id_max()',
-    'DROP FUNCTION IF EXISTS dsc_files_id_max()',
-    'DROP FUNCTION IF EXISTS files_id_max()',
-    'DROP FUNCTION IF EXISTS override_type_id_max()',
-    'DROP FUNCTION IF EXISTS priority_id_max()',
-    'DROP FUNCTION IF EXISTS section_id_max()',
-    'DROP FUNCTION IF EXISTS source_id_max()',
-    'DROP AGGREGATE IF EXISTS space_separated_list(TEXT)',
-    'DROP FUNCTION IF EXISTS space_concat(TEXT, TEXT)',
-    'DROP FUNCTION IF EXISTS src_associations_id_max()',
+"""
+ALTER TABLE component
+ADD COLUMN ordering INTEGER UNIQUE
+""",
+
+"""
+CREATE SEQUENCE component_ordering_seq
+INCREMENT BY 10
+START WITH 100
+OWNED BY component.ordering
+""",
 ]
 
 ################################################################################
@@ -54,9 +55,16 @@ def do_update(self):
         for stmt in statements:
             c.execute(stmt)
 
-        c.execute("UPDATE config SET value = '98' WHERE name = 'db_revision'")
+        for component in ('main', 'contrib', 'non-free'):
+            c.execute("UPDATE component SET ordering = nextval('component_ordering_seq') WHERE name = '{0}'".format(component))
+        c.execute("UPDATE component SET ordering = nextval('component_ordering_seq') WHERE ordering IS NULL")
+        c.execute("""ALTER TABLE component ALTER COLUMN ordering SET NOT NULL""")
+        c.execute("""ALTER TABLE component ALTER COLUMN ordering SET DEFAULT nextval('component_ordering_seq')""")
+
+        c.execute("UPDATE config SET value = '99' WHERE name = 'db_revision'")
+
         self.db.commit()
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 98, rollback issued. Error message: {0}'.format(msg))
+        raise DBUpdateError('Unable to apply sick update 99, rollback issued. Error message: {0}'.format(msg))

@@ -34,13 +34,13 @@
 ################################################################################
 
 import apt_pkg
+import daklib.daksubprocess
 import os
 from os.path import normpath
 import re
 import psycopg2
+import subprocess
 import traceback
-import commands
-import signal
 
 try:
     # python >= 2.6
@@ -52,7 +52,6 @@ except:
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
-from subprocess import Popen, PIPE
 from tarfile import TarFile
 
 from inspect import getargspec
@@ -311,7 +310,7 @@ class ORMObject(object):
         return object_session(self)
 
     def clone(self, session = None):
-        '''
+        """
         Clones the current object in a new session and returns the new clone. A
         fresh session is created if the optional session parameter is not
         provided. The function will fail if a session is provided and has
@@ -324,8 +323,8 @@ class ORMObject(object):
         WARNING: Only persistent (committed) objects can be cloned. Changes
         made to the original object that are not committed yet will get lost.
         The session of the new object will always be rolled back to avoid
-        ressource leaks.
-        '''
+        resource leaks.
+        """
 
         if self.session() is None:
             raise RuntimeError( \
@@ -433,27 +432,6 @@ def get_architecture(architecture, session=None):
 
 __all__.append('get_architecture')
 
-# TODO: should be removed because the implementation is too trivial
-@session_wrapper
-def get_architecture_suites(architecture, session=None):
-    """
-    Returns list of Suite objects for given C{architecture} name
-
-    @type architecture: str
-    @param architecture: Architecture name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of Suite objects for the given name (may be empty)
-    """
-
-    return get_architecture(architecture, session).suites
-
-__all__.append('get_architecture_suites')
-
 ################################################################################
 
 class Archive(object):
@@ -519,11 +497,6 @@ __all__.append('BinContents')
 
 ################################################################################
 
-def subprocess_setup():
-    # Python installs a SIGPIPE handler by default. This is usually not what
-    # non-Python subprocesses expect.
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
 class DBBinary(ORMObject):
     def __init__(self, package = None, source = None, version = None, \
         maintainer = None, architecture = None, poolfile = None, \
@@ -560,8 +533,8 @@ class DBBinary(ORMObject):
         package does not contain any regular file.
         '''
         fullpath = self.poolfile.fullpath
-        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE,
-            preexec_fn = subprocess_setup)
+        dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', fullpath)
+        dpkg = daklib.daksubprocess.Popen(dpkg_cmd, stdout=subprocess.PIPE)
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if not member.isdir():
@@ -1220,7 +1193,7 @@ class Keyring(object):
 
         k = os.popen(self.gpg_invocation % keyring, "r")
         key = None
-        signingkey = False
+        need_fingerprint = False
 
         for line in k:
             field = line.split(":")
@@ -1231,18 +1204,16 @@ class Keyring(object):
                 if "@" in addr:
                     self.keys[key]["email"] = addr
                     self.keys[key]["name"] = name
-                self.keys[key]["fingerprints"] = []
-                signingkey = True
-            elif key and field[0] == "sub" and len(field) >= 12:
-                signingkey = ("s" in field[11])
+                need_fingerprint = True
             elif key and field[0] == "uid":
                 (name, addr) = self.parse_address(field[9])
                 if "email" not in self.keys[key] and "@" in addr:
                     self.keys[key]["email"] = addr
                     self.keys[key]["name"] = name
-            elif signingkey and field[0] == "fpr":
-                self.keys[key]["fingerprints"].append(field[9])
+            elif need_fingerprint and field[0] == "fpr":
+                self.keys[key]["fingerprints"] = [field[9]]
                 self.fpr_lookup[field[9]] = key
+                need_fingerprint = False
 
     def import_users_from_ldap(self, session):
         import ldap
@@ -2560,6 +2531,7 @@ class DBConn(object):
             'changelogs_text',
             'changes',
             'component',
+            'component_suite',
             'config',
             'dsc_files',
             'external_overrides',
@@ -2835,7 +2807,10 @@ class DBConn(object):
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
                                      backref=backref('suites', lazy='dynamic')),
                                  archive = relation(Archive, backref='suites'),
-                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set)),
+                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
+                                 components = relation(Component, secondary=self.tbl_component_suite,
+                                                   order_by=self.tbl_component.c.ordering,
+                                                   backref=backref('suites'))),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,
@@ -2958,5 +2933,3 @@ class DBConn(object):
         return session
 
 __all__.append('DBConn')
-
-

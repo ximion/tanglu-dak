@@ -24,6 +24,7 @@ Please read the documentation for the L{Check} class for the interface.
 """
 
 from daklib.config import Config
+import daklib.daksubprocess
 from daklib.dbconn import *
 import daklib.dbconn as dbconn
 from daklib.regexes import *
@@ -37,11 +38,18 @@ import apt_pkg
 from apt_pkg import version_compare
 import errno
 import os
+import subprocess
 import time
 import yaml
 
-# TODO: replace by subprocess
-import commands
+def check_fields_for_valid_utf8(filename, control):
+    """Check all fields of a control file for valid UTF-8"""
+    for field in control.keys():
+        try:
+            field.decode('utf-8')
+            control[field].decode('utf-8')
+        except UnicodeDecodeError:
+            raise Reject('{0}: The {1} field is not valid UTF-8'.format(filename, field))
 
 class Reject(Exception):
     """exception raised by failing checks"""
@@ -160,6 +168,8 @@ class ChangesCheck(Check):
             if field not in control:
                 raise Reject('{0}: misses mandatory field {1}'.format(fn, field))
 
+        check_fields_for_valid_utf8(fn, control)
+
         source_match = re_field_source.match(control['Source'])
         if not source_match:
             raise Reject('{0}: Invalid Source field'.format(fn))
@@ -263,6 +273,8 @@ class BinaryCheck(Check):
         for field in ('Package', 'Architecture', 'Version', 'Description'):
             if field not in control:
                 raise Reject('{0}: Missing mandatory field {0}.'.format(fn, field))
+
+        check_fields_for_valid_utf8(fn, control)
 
         # check fields
 
@@ -392,6 +404,8 @@ class SourceCheck(Check):
         source = upload.changes.source
         control = source.dsc
         dsc_fn = source._dsc_file.filename
+
+        check_fields_for_valid_utf8(dsc_fn, control)
 
         # check fields
         if not re_field_package.match(control['Source']):
@@ -587,7 +601,7 @@ transition is done.""".format(source, currentlymsg, expected,t["rm"])))
 
         contents = file(path, 'r').read()
         try:
-            transitions = yaml.load(contents)
+            transitions = yaml.safe_load(contents)
             return transitions
         except yaml.YAMLError as msg:
             utils.warn('Not checking transitions, the transitions file is broken: {0}'.format(msg))
@@ -628,7 +642,7 @@ class LintianCheck(Check):
         with open(tagfile, 'r') as sourcefile:
             sourcecontent = sourcefile.read()
         try:
-            lintiantags = yaml.load(sourcecontent)['lintian']
+            lintiantags = yaml.safe_load(sourcecontent)['lintian']
         except yaml.YAMLError as msg:
             raise Exception('Could not read lintian tags file {0}, YAML error: {1}'.format(tagfile, msg))
 
@@ -642,13 +656,17 @@ class LintianCheck(Check):
         changespath = os.path.join(upload.directory, changes.filename)
         try:
             cmd = []
+            result = 0
 
             user = cnf.get('Dinstall::UnprivUser') or None
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
 
-            cmd.extend(['LINTIAN_COLL_UNPACKED_SKIP_SIG=1', '/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
-            result, output = commands.getstatusoutput(" ".join(cmd))
+            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
+            output = daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            result = e.returncode
+            output = e.output
         finally:
             os.unlink(temp_filename)
 

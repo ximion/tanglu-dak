@@ -2,10 +2,11 @@
 # coding=utf8
 
 """
-Remove obsolete functions
+Add a component - suite mapping to only expose certain components in certain suites
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2013, Ansgar Burchardt <ansgar@debian.org>
+@copyright: 2012 Varnish Software AS
+@author: Tollef Fog Heen <tfheen@varnish-software.com>
 @license: GNU General Public License version 2 or later
 """
 
@@ -29,20 +30,6 @@ import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
 
-statements = [
-    'DROP FUNCTION IF EXISTS bin_associations_id_max()',
-    'DROP FUNCTION IF EXISTS binaries_id_max()',
-    'DROP FUNCTION IF EXISTS dsc_files_id_max()',
-    'DROP FUNCTION IF EXISTS files_id_max()',
-    'DROP FUNCTION IF EXISTS override_type_id_max()',
-    'DROP FUNCTION IF EXISTS priority_id_max()',
-    'DROP FUNCTION IF EXISTS section_id_max()',
-    'DROP FUNCTION IF EXISTS source_id_max()',
-    'DROP AGGREGATE IF EXISTS space_separated_list(TEXT)',
-    'DROP FUNCTION IF EXISTS space_concat(TEXT, TEXT)',
-    'DROP FUNCTION IF EXISTS src_associations_id_max()',
-]
-
 ################################################################################
 def do_update(self):
     print __doc__
@@ -51,12 +38,19 @@ def do_update(self):
 
         c = self.db.cursor()
 
-        for stmt in statements:
-            c.execute(stmt)
+        c.execute("""
+            CREATE TABLE component_suite (
+                component_id INTEGER NOT NULL REFERENCES component(id) ON DELETE CASCADE,
+                suite_id INTEGER NOT NULL REFERENCES suite(id) ON DELETE CASCADE,
+                PRIMARY KEY (component_id, suite_id)
+            )
+            """)
+        # Set up default mappings for all components to all suites
+        c.execute("INSERT INTO component_suite(component_id, suite_id) SELECT component.id,suite.id from suite, component")
 
-        c.execute("UPDATE config SET value = '98' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '100' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 98, rollback issued. Error message: {0}'.format(msg))
+        raise DBUpdateError('Unable to apply sick update 100, rollback issued. Error message: {0}'.format(msg))

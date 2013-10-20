@@ -26,12 +26,12 @@ import daklib.upload as upload
 import daklib.utils as utils
 from daklib.fstransactions import FilesystemTransaction
 from daklib.regexes import re_changelog_versions, re_bin_only_nmu
+import daklib.daksubprocess
 
 import apt_pkg
 from datetime import datetime
 import os
 import shutil
-import subprocess
 from sqlalchemy.orm.exc import NoResultFound
 import sqlalchemy.exc
 import tempfile
@@ -389,13 +389,13 @@ class ArchiveTransaction(object):
         session = self.session
 
         if session.query(ArchiveFile).filter_by(archive=archive, component=component, file=db_file).first() is None:
-            query = session.query(ArchiveFile).filter_by(file=db_file, component=component)
+            query = session.query(ArchiveFile).filter_by(file=db_file)
             if not allow_tainted:
                 query = query.join(Archive).filter(Archive.tainted == False)
 
             source_af = query.first()
             if source_af is None:
-                raise ArchiveException('cp: Could not find {0} in component {1} in any archive.'.format(db_file.filename, component.component_name))
+                raise ArchiveException('cp: Could not find {0} in any archive.'.format(db_file.filename))
             target_af = ArchiveFile(archive, component, db_file)
             session.add(target_af)
             session.flush()
@@ -695,7 +695,7 @@ class ArchiveUpload(object):
         sourcedir = os.path.join(self.directory, 'source')
         if not os.path.exists(sourcedir):
             devnull = open('/dev/null', 'w')
-            subprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
+            daklib.daksubprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
         if not os.path.isdir(sourcedir):
             raise Exception("{0} is not a directory after extracting source package".format(sourcedir))
         return sourcedir
@@ -1095,7 +1095,7 @@ class ArchiveUpload(object):
                 continue
 
             script = rule['Script']
-            retcode = subprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename)], shell=False)
+            retcode = daklib.daksubprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename)], shell=False)
             if retcode != 0:
                 print "W: error processing {0}.".format(f.filename)
                 remaining.append(f)

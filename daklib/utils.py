@@ -44,6 +44,7 @@ import subprocess
 import ldap
 
 import daklib.config as config
+import daklib.daksubprocess
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, get_primary_keyring_path, \
@@ -77,7 +78,7 @@ known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
 # code in lenny's Python. This also affects commands.getoutput and
 # commands.getstatus.
 def dak_getstatusoutput(cmd):
-    pipe = subprocess.Popen(cmd, shell=True, universal_newlines=True,
+    pipe = daklib.daksubprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     output = pipe.stdout.read()
@@ -1424,6 +1425,30 @@ def get_logins_from_ldap(fingerprint='*'):
 
 ################################################################################
 
+def get_users_from_ldap():
+    """retrieve login and user names from LDAP"""
+
+    LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
+    LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
+    l = ldap.open(LDAPServer)
+    l.simple_bind_s('','')
+    Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+                       '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
+    users = {}
+    for elem in Attrs:
+        elem = elem[1]
+        name = []
+        for k in ('cn', 'mn', 'sn'):
+            try:
+                if elem[k][0] != '-':
+                    name.append(elem[k][0])
+            except KeyError:
+                pass
+        users[' '.join(name)] = elem['uid'][0]
+    return users
+
+################################################################################
+
 def clean_symlink (src, dest, root):
     """
     Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
@@ -1665,7 +1690,7 @@ def call_editor(text="", suffix=".txt"):
     try:
         print >>tmp, text,
         tmp.close()
-        subprocess.check_call([editor, tmp.name])
+        daklib.daksubprocess.check_call([editor, tmp.name])
         return open(tmp.name, 'r').read()
     finally:
         os.unlink(tmp.name)

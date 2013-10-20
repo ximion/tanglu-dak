@@ -83,7 +83,7 @@ def sign_release_dir(suite, dirname):
         if cnf.has_key("Dinstall::SigningPubKeyring"):
             keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
 
-        arguments = "--no-options --batch --no-tty --armour"
+        arguments = "--no-options --batch --no-tty --armour --personal-digest-preferences=SHA256"
 
         relname = os.path.join(dirname, 'Release')
 
@@ -170,7 +170,7 @@ class ReleaseWriter(object):
 
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
 
-        components = [ c.component_name for c in session.query(Component) ]
+        components = [ c.component_name for c in suite.components ]
 
         out.write("Components: %s\n" % (" ".join(components)))
 
