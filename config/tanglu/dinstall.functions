@@ -163,7 +163,12 @@ function mirror() {
 
     archiveroot="$(get_archiveroot "janus")"
     cd $public_ftpdir
-    rsync -aH --link-dest ${archiveroot} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${archiveroot}/. ./tanglu
+    # sync everything which is not in dists/ and create hardlinks for it
+    # maybe make use of --delete-excluded option from time to time
+    rsync -aH --link-dest ${archiveroot} --delete --delete-after --exclude Packages.*.new --exclude Sources.*.new --exclude=dists --ignore-errors ${archiveroot}/. ./tanglu
+    # now sync the dists dir without hardlinks
+    # (this is done to prevent archive issues while the indices are rebuilt)
+    rsync -aqH --delete ${archiveroot}/dists ./tanglu/
 }
 
 function release() {
