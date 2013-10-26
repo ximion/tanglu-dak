@@ -51,8 +51,7 @@ cleanup() {
 
 function do_dists () {
     cd $configdir
-    dak generate-packages-sources2 -s staging > /dev/null
-    dak generate-packages-sources2 -s aequorea > /dev/null
+    dak generate-packages-sources2 > /dev/null
     release
     # sync the public ftp mirror
     mirror
