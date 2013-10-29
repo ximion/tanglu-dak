@@ -788,8 +788,9 @@ def main ():
     if "nviu" in checks:
         do_newer_version('aequorea', 'staging', 'NVIU', session)
 
-    if "nvit" in checks:
-        do_newer_version('testing', 'testing-proposed-updates', 'NVIT', session)
+    # FIXME: Not used in Tanglu
+    #if "nvit" in checks:
+    #    do_newer_version('testing', 'testing-proposed-updates', 'NVIT', session)
 
     ###
 
