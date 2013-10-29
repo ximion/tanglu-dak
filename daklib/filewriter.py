@@ -47,6 +47,7 @@ class BaseFileWriter(object):
         self.uncompressed = 'none' in compression
         self.gzip = 'gzip' in compression
         self.bzip2 = 'bzip2' in compression
+        self.xz = 'xz' in compression
         self.path = template % keywords
 
     def open(self):
@@ -64,8 +65,16 @@ class BaseFileWriter(object):
     # internal helper function
     def rename(self, filename):
         tempfilename = filename + '.new'
-        os.chmod(tempfilename, 0o664)
+        os.chmod(tempfilename, 0o644)
         os.rename(tempfilename, filename)
+
+    # internal helper function to compress output
+    def compress(self, cmd, suffix, path):
+        in_filename = "{0}.new".format(path)
+        out_filename = "{0}.{1}.new".format(path, suffix)
+        with open(in_filename, 'r') as in_fh, open(out_filename, 'w') as out_fh:
+            check_call(cmd, stdin=in_fh, stdout=out_fh)
+        self.rename("{0}.{1}".format(path, suffix))
 
     def close(self):
         '''
@@ -73,12 +82,11 @@ class BaseFileWriter(object):
         '''
         self.file.close()
         if self.gzip:
-            check_call('gzip -9cn --rsyncable <%s.new >%s.gz.new' % (self.path, self.path),
-                shell = True)
-            self.rename('%s.gz' % self.path)
+            self.compress(['gzip', '-9cn', '--rsyncable'], 'gz', self.path)
         if self.bzip2:
-            check_call('bzip2 -9 <%s.new >%s.bz2.new' % (self.path, self.path), shell = True)
-            self.rename('%s.bz2' % self.path)
+            self.compress(['bzip2', '-9'], 'bz2', self.path)
+        if self.xz:
+            self.compress(['xz', '-c'], 'xz', self.path)
         if self.uncompressed:
             self.rename(self.path)
         else:
@@ -121,7 +129,7 @@ class PackagesFileWriter(BaseFileWriter):
         are strings.  Output files are gzip compressed only.
         '''
         flags = {
-            'compression': ['gzip', 'bzip2'],
+            'compression': ['gzip', 'xz'],
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
@@ -137,7 +145,7 @@ class SourcesFileWriter(BaseFileWriter):
         files are gzip compressed only.
         '''
         flags = {
-            'compression': ['gzip', 'bzip2'],
+            'compression': ['gzip', 'xz'],
         }
         flags.update(keywords)
         template = "%(archive)s/dists/%(suite)s/%(component)s/source/Sources"
