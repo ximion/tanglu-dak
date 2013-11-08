@@ -79,6 +79,10 @@ function do_dists () {
     release_staging
     # sync the public ftp mirror
     mirror
+    # just for testing...
+    archiveroot="$(get_archiveroot "janus")"
+    cd $public_ftpdir
+    rsync -aqH --delete ${archiveroot}/dists ./tanglu/
 }
 
 ########################################################################
@@ -96,9 +100,6 @@ if ! lockfile -r8 $LOCKFILE; then
 fi
 trap cleanup 0
 
-
-pg_timestamp preunchecked >/dev/null
-
 # Process policy queues
 punew stable-new
 opunew oldstable-new
@@ -114,7 +115,6 @@ fi
 
 dak contents -l 10000 scan-binary
 dak contents -l 1000 scan-source
-pg_timestamp postunchecked >/dev/null
 
 # cleanup incoming upload dir
 [ "$(ls -A /pub/ftp/incoming)" ] && find /pub/ftp/incoming/ -mtime +2 -exec rm {} \;
