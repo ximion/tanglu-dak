@@ -188,10 +188,6 @@ function release() {
     done
 }
 
-function release_staging() {
-    dak generate-releases -s staging
-}
-
 function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
