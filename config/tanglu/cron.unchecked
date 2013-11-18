@@ -79,6 +79,8 @@ function do_dists () {
     dak generate-packages-sources2 -a janus -s staging > /dev/null
     pdiff
     release
+    #sync # just for testing
+    copyoverrides
     # sync the public ftp mirror
     mirror
 }
