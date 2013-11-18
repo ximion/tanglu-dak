@@ -76,7 +76,8 @@ function do_buildd () {
 
 function do_dists () {
     cd $configdir
-    dak generate-packages-sources2 -s staging > /dev/null
+    dak generate-packages-sources2 -a janus -s staging > /dev/null
+    pdiff
     release
     # sync the public ftp mirror
     mirror
