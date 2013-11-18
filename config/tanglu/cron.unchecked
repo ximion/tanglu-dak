@@ -2,6 +2,7 @@
 # No way I try to deal with a crippled sh just for POSIX foo.
 
 # Copyright (C) 2009 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2013 Matthias Klumpp <mak@debian.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -79,10 +80,6 @@ function do_dists () {
     release
     # sync the public ftp mirror
     mirror
-    # just for testing...
-    archiveroot="$(get_archiveroot "janus")"
-    cd $public_ftpdir
-    rsync -aqH --delete ${archiveroot}/dists ./tanglu/
 }
 
 ########################################################################
