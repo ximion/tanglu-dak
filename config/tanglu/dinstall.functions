@@ -239,7 +239,7 @@ function copyoverrides() {
 
     # FIXME-TANGLU: I have no idea, what "extra" does, except for breaking dak... Todo: Ask ansgar about it
     # Original line: for ofile in ${overridedir}/override.{aequorea,staging}.{,extra.}{main,contrib,non-free}*; do
-    for ofile in ${overridedir}/override.{aequorea,staging}.{main,contrib,non-free}*; do
+    for ofile in ${overridedir}/override.{aequorea}.{main,contrib,non-free}*; do
         bname=${ofile##*/}
         gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
         chmod g+w ${indices}/${bname}.gz
