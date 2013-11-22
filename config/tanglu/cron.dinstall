@@ -314,13 +314,14 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="copyoverrides"
-    TIME="copyoverrides"
-    ARGS=""
-    ERR=""
-)
-stage $GO
+# FIXME-Tanglu: Temporarily disabled, throws errors
+#GO=(
+#    FUNC="copyoverrides"
+#    TIME="copyoverrides"
+#    ARGS=""
+#    ERR=""
+#)
+#stage $GO
 
 GO=(
     FUNC="mklslar"
