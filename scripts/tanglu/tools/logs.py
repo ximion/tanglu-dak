@@ -8,7 +8,7 @@ import tempfile, time
 
 ITEMS_TO_KEEP = 20
 CACHE_FILE = '/srv/ftp-master.tanglu.org/misc/dinstall_time_cache'
-GRAPH_DIR = '/srv/ftp.tanglu.org/web/stat'
+GRAPH_DIR = '/srv/ftp-master.tanglu.org/web/stat'
 
 LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:'+
                   r'Archive maintenance timestamp \(([^\)]*)\): (\d{2}):(\d{2}):(\d{2})$')
