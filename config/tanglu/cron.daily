@@ -21,6 +21,6 @@ dak cruft-report -R --mode bdo -s staging -s aequorea > $webdir/cruft-report-dai
 cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu Aequorea archive cruft report for $(date +%D)" mak@debian.org
 
 # sync the Tanglu bug database
-$scriptsdir/dak-bz-bridge.py
+$scriptsdir/dak-trac-bridge.py
 
 echo "Daily cron scripts successful."
