@@ -62,7 +62,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in aequorea; do
+                for dir in bartholomea; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after --exclude Translation-en.bz2 --exclude Translation-*.diff/ . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -131,8 +131,8 @@ function overrides() {
     dak make-overrides
 
     # FIXME
-    rm -f override.aequorea.all3
-    for i in main contrib non-free main.debian-installer; do cat override.aequorea.$i >> override.aequorea.all3; done
+    rm -f override.bartholomea.all3
+    for i in main contrib non-free main.debian-installer; do cat override.bartholomea.$i >> override.bartholomea.all3; done
 }
 
 function mpfm() {
@@ -239,7 +239,7 @@ function copyoverrides() {
 
     # FIXME-TANGLU: I have no idea, what "extra" does, except for breaking dak... Todo: Ask ansgar about it
     # Original line: for ofile in ${overridedir}/override.{aequorea,staging}.{,extra.}{main,contrib,non-free}*; do
-    for ofile in ${overridedir}/override.{aequorea}.{main,contrib,non-free}*; do
+    for ofile in ${overridedir}/override.{aequorea,bartholomea}.{main,contrib,non-free}*; do
         bname=${ofile##*/}
         gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
         chmod g+w ${indices}/${bname}.gz
@@ -370,12 +370,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-	    for dist in staging aequorea; do
+	    for dist in staging bartholomea; do
 		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-aequorea.list.gz ; zcat translation-wheezy.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-bartholomea.list.gz ; zcat translation-wheezy.list.gz) |
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
@@ -539,7 +539,7 @@ function renamelogfile() {
 }
 
 function develsourcelist() {
-    dak ls -s aequorea -f heidi -r .| egrep 'source$' > ${webdir}/aequorea.list
+    dak ls -s bartholomea -f heidi -r .| egrep 'source$' > ${webdir}/bartholomea.list
 }
 
 # do a last run of process-unchecked before dinstall is on.
