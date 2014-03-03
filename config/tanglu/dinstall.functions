@@ -131,8 +131,9 @@ function overrides() {
     dak make-overrides
 
     # FIXME
-    rm -f override.bartholomea.all3
-    for i in main contrib non-free main.debian-installer; do cat override.bartholomea.$i >> override.bartholomea.all3; done
+    # IMPORTANT-B
+    #rm -f override.bartholomea.all3
+    #for i in main contrib non-free main.debian-installer; do cat override.bartholomea.$i >> override.bartholomea.all3; done
 }
 
 function mpfm() {
