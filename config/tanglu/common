@@ -23,12 +23,10 @@ function debug () {
     fi
 }
 
-function jenkins_trigger() {
-    # trigger update of Jenkins package build database
-    echo "Trigger Jenkins..."
-    maintain-jenkins-jobs --update
-    echo "Checking for buildable packages..."
-    maintain-jenkins-jobs --checkbuild
+function debile_trigger() {
+    # trigger update of Debile package build-job database
+    echo "Debile Trigger"
+    debile-update-jobs --update-jobs
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue

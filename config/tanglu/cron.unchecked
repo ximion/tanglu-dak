@@ -69,8 +69,8 @@ function do_buildd () {
         # export list of source-maintainers
         dak make-maintainers -s -p -a janus > SourceMaintainers
 
-        # tell Jenkins that we have new stuff
-        jenkins_trigger
+        # tell Debile that we have new stuff
+        debile_trigger
     fi
 }
 
@@ -82,6 +82,10 @@ function do_dists () {
     #! sync # just for testing
     # sync the public ftp mirror
     mirror
+}
+
+function do_debile_incoming () {
+    debile-process-incoming
 }
 
 ########################################################################
@@ -108,6 +112,7 @@ do_unchecked
 
 if [ ! -z "$changes" ]; then
     #sync_debbugs
+    do_debile_incoming
     do_dists
     do_buildd
 fi
