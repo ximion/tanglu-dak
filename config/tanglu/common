@@ -26,7 +26,7 @@ function debug () {
 function debile_trigger() {
     # trigger update of Debile package build-job database
     echo "Debile Trigger"
-    debile-update-jobs --update-jobs
+    sudo -u debile debile-update-jobs --update-jobs
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue

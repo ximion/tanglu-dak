@@ -85,7 +85,7 @@ function do_dists () {
 }
 
 function do_debile_incoming () {
-    debile-process-incoming
+    sudo -u debile debile-process-incoming
 }
 
 ########################################################################
