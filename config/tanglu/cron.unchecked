@@ -85,6 +85,8 @@ function do_dists () {
 }
 
 function do_debile_incoming () {
+    cd /pub/ftp/incoming/
+    [ "$(ls -A /pub/ftp/incoming)" ] && chmod 660 /pub/ftp/incoming/*
     sudo -u debile debile-process-incoming
 }
 
@@ -109,10 +111,10 @@ opunew oldstable-new
 
 # Finally deal with unchecked
 do_unchecked
+do_debile_incoming
 
 if [ ! -z "$changes" ]; then
     #sync_debbugs
-    do_debile_incoming
     do_dists
     do_buildd
 fi
