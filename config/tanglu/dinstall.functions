@@ -98,8 +98,7 @@ function fingerprints() {
     # FIXME-TANGLU: Run with "-L" to fetch uids from LDAP - there is no Tanglu-LDAP yet, so it is disabled
     # and we use -U '%s' instead
     dak import-keyring -U '%s' /srv/keyring.tanglu.org/keyrings/master-upload-keyring.gpg
-    dak import-keyring -U '%s' /srv/dak/keyrings/buildd/i386-keyring.gpg
-    dak import-keyring -U '%s' /srv/dak/keyrings/buildd/amd64-keyring.gpg
+    dak import-keyring -U '%s' /srv/dak/keyrings/buildd/any-keyring.gpg
 
     OUTFILE=$(mktemp)
     dak import-keyring --generate-users "%s" /srv/keyring.tanglu.org/keyrings/maintainers-keyring.gpg >"${OUTFILE}"
