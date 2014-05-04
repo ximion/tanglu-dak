@@ -606,4 +606,9 @@ function gitpdiff() {
     TAGD=$(date +%Y-%m-%d-%H-%M)
     git commit -m "Commit of ${COMD}"
     git tag "${TAGD}"
- }
+}
+
+function debile_update() {
+    log "Running Debile maintenance tasks"
+    sudo -u debile debile-tanglu-integration --import --unblock --prune --reschedule --clean $suites_incoming
+}

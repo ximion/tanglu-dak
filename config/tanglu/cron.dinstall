@@ -441,6 +441,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="debile_update"
+    TIME=""
+    ARGS=""
+    ERR=""
+)
+stage $GO
+
+GO=(
     FUNC="aptftpcleanup"
     TIME="apt-ftparchive cleanup"
     ARGS=""

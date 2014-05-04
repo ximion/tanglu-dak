@@ -70,7 +70,7 @@ function do_buildd () {
         dak make-maintainers -s -p -a janus > SourceMaintainers
 
         # tell Debile that we have new stuff
-        debile_trigger
+        debile_unblock_trigger
     fi
 }
 

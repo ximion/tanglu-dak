@@ -23,10 +23,10 @@ function debug () {
     fi
 }
 
-function debile_trigger() {
+function debile_unblock_trigger() {
     # trigger update of Debile package build-job database
     echo "Debile Trigger"
-    sudo -u debile debile-update-jobs --update-jobs
+    sudo -u debile debile-tanglu-integration --import --unblock $suites_incoming
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
