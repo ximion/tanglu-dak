@@ -66,8 +66,6 @@ function do_buildd () {
     if lockfile -r3 $NOTICE; then
         LOCKDAILY="YES"
         cd $exportdir
-        # export list of source-maintainers
-        dak make-maintainers -s -p -a janus > SourceMaintainers
 
         # tell Debile that we have new stuff
         debile_unblock_trigger
