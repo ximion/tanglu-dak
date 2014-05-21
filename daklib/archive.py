@@ -960,6 +960,9 @@ class ArchiveUpload(object):
         control = self.changes.changes
         changed_by = get_or_set_maintainer(control.get('Changed-By', control['Maintainer']), self.session)
 
+        if suite.suite_name == 'staging':
+            source_suites = True
+
         if source_suites is None:
             source_suites = self.session.query(Suite).join((VersionCheck, VersionCheck.reference_id == Suite.suite_id)).filter(VersionCheck.check == 'Enhances').filter(VersionCheck.suite == suite).subquery()
 
