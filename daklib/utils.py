@@ -23,6 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import commands
+import codecs
 import datetime
 import email.Header
 import os
@@ -42,6 +43,7 @@ import re
 import email as modemail
 import subprocess
 import ldap
+import errno
 
 import daklib.config as config
 import daklib.daksubprocess
@@ -56,8 +58,8 @@ from gpg import SignedFile
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source, re_build_dep_arch
+                    re_re_mark, re_whitespace_comment, re_issource, \
+                    re_is_orig_source, re_build_dep_arch, re_parse_maintainer
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -258,9 +260,8 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         "-----BEGIN PGP SIGNATURE-----".
     """
 
-    changes_in = open_file(filename)
-    content = changes_in.read()
-    changes_in.close()
+    with open_file(filename) as changes_in:
+        content = changes_in.read()
     try:
         unicode(content, 'utf-8')
     except UnicodeError:
@@ -321,11 +322,8 @@ def check_hash(where, files, hashname, hashfunc):
 
     rejmsg = []
     for f in files.keys():
-        file_handle = None
         try:
-            try:
-                file_handle = open_file(f)
-
+            with open_file(f) as file_handle:
                 # Check for the hash entry, to not trigger a KeyError.
                 if not files[f].has_key(hash_key(hashname)):
                     rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
@@ -336,13 +334,10 @@ def check_hash(where, files, hashname, hashfunc):
                 if hashfunc(file_handle) != files[f][hash_key(hashname)]:
                     rejmsg.append("%s: %s check failed in %s" % (f, hashname,
                         where))
-            except CantOpenError:
-                # TODO: This happens when the file is in the pool.
-                # warn("Cannot open file %s" % f)
-                continue
-        finally:
-            if file_handle:
-                file_handle.close()
+        except CantOpenError:
+            # TODO: This happens when the file is in the pool.
+            # warn("Cannot open file %s" % f)
+            continue
     return rejmsg
 
 ################################################################################
@@ -358,7 +353,7 @@ def check_size(where, files):
         try:
             entry = os.stat(f)
         except OSError as exc:
-            if exc.errno == 2:
+            if exc.errno == errno.ENOENT:
                 # TODO: This happens when the file is in the pool.
                 continue
             raise
@@ -619,9 +614,8 @@ def send_mail (message, filename="", whitelists=None):
     if maildir:
         path = os.path.join(maildir, datetime.datetime.now().isoformat())
         path = find_next_free(path)
-        fh = open(path, 'w')
-        print >>fh, message,
-        fh.close()
+        with open(path, 'w') as fh:
+            print >>fh, message,
 
     # Check whether we're supposed to be sending mail
     if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
@@ -638,9 +632,8 @@ def send_mail (message, filename="", whitelists=None):
     if Cnf.get('Dinstall::MailWhiteList', ''):
         whitelists.append(Cnf['Dinstall::MailWhiteList'])
     if len(whitelists) != 0:
-        message_in = open_file(filename)
-        message_raw = modemail.message_from_file(message_in)
-        message_in.close();
+        with open_file(filename) as message_in:
+            message_raw = modemail.message_from_file(message_in)
 
         whitelist = [];
         for path in whitelists:
@@ -720,7 +713,7 @@ def move (src, dest, overwrite = 0, perms = 0o664):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
+    if not os.path.lexists(dest_dir):
         umask = os.umask(00000)
         os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
@@ -728,7 +721,7 @@ def move (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
-    if os.path.exists(dest):
+    if os.path.lexists(dest):
         if not overwrite:
             fubar("Can't move %s to %s - file already exists." % (src, dest))
         else:
@@ -751,7 +744,7 @@ def copy (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
-    if os.path.exists(dest):
+    if os.path.lexists(dest):
         if not overwrite:
             raise FileExistsError
         else:
@@ -761,14 +754,6 @@ def copy (src, dest, overwrite = 0, perms = 0o664):
     os.chmod(dest, perms)
 
 ################################################################################
-
-def where_am_i ():
-    res = socket.getfqdn()
-    database_hostname = Cnf.get("Config::" + res + "::DatabaseHostname")
-    if database_hostname:
-        return database_hostname
-    else:
-        return res
 
 def which_conf_file ():
     if os.getenv('DAK_CONFIG'):
@@ -789,23 +774,14 @@ def which_conf_file ():
 
     return default_config
 
-def which_alias_file():
-    hostname = socket.getfqdn()
-    aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
-    if os.path.exists(aliasfn):
-        return aliasfn
-    else:
-        return None
-
 ################################################################################
 
 def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
-    templatefile = open_file(filename)
-    template = templatefile.read()
+    with open_file(filename) as templatefile:
+        template = templatefile.read()
     for k, v in subst_map.iteritems():
         template = template.replace(k, str(v))
-    templatefile.close()
     return template
 
 ################################################################################
@@ -894,7 +870,7 @@ def changes_compare (a, b):
 def find_next_free (dest, too_many=100):
     extra = 0
     orig_dest = dest
-    while os.path.exists(dest) and extra < too_many:
+    while os.path.lexists(dest) and extra < too_many:
         dest = orig_dest + '.' + repr(extra)
         extra += 1
     if extra >= too_many:
@@ -1388,21 +1364,37 @@ def gpg_get_key_addresses(fingerprint):
     if addresses != None:
         return addresses
     addresses = list()
-    cmd = "gpg --no-default-keyring %s --fingerprint %s" \
-                % (gpg_keyring_args(), fingerprint)
-    (result, output) = commands.getstatusoutput(cmd)
-    if result == 0:
+    try:
+        with open(os.devnull, "wb") as devnull:
+            output = daklib.daksubprocess.check_output(
+                ["gpg", "--no-default-keyring"] + gpg_keyring_args().split() +
+                ["--with-colons", "--list-keys", fingerprint], stderr=devnull)
+    except subprocess.CalledProcessError:
+        pass
+    else:
         for l in output.split('\n'):
-            m = re_gpg_uid.match(l)
+            parts = l.split(':')
+            if parts[0] not in ("uid", "pub"):
+                continue
+            try:
+                uid = parts[9]
+            except IndexError:
+                continue
+            try:
+                uid = codecs.decode(uid.decode("utf-8"), "unicode_escape")
+            except UnicodeDecodeError:
+                uid = uid.decode("latin1") # does not fail
+            m = re_parse_maintainer.match(uid)
             if not m:
                 continue
-            address = m.group(1)
+            address = m.group(2)
+            address = address.encode("utf8") # dak still uses bytes
             if address.endswith('@debian.org'):
                 # prefer @debian.org addresses
                 # TODO: maybe not hardcode the domain
                 addresses.insert(0, address)
             else:
-                addresses.append(m.group(1))
+                addresses.append(address)
     key_uid_email_cache[fingerprint] = addresses
     return addresses
 
@@ -1582,7 +1574,7 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
         lines = f.readlines()
     except IOError as e:
         print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
-	lines = []
+        lines = []
     wnpp = {}
 
     for line in lines:
@@ -1850,9 +1842,10 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     .filter(Override.package == re.sub('/(contrib|non-free)$', '', source)) \
                     .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
                     .first()
+                key = source
                 if component != "main":
-                    source = "%s/%s" % (source, component)
-                all_broken.setdefault(source, set()).add(pp_deps(dep))
+                    key = "%s/%s" % (source, component)
+                all_broken.setdefault(key, set()).add(pp_deps(dep))
                 dep_problem = 1
 
     if all_broken:

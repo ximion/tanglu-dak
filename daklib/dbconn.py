@@ -109,11 +109,11 @@ class DebVersion(UserDefinedType):
         return None
 
 sa_major_version = sqlalchemy.__version__[0:3]
-if sa_major_version in ["0.5", "0.6", "0.7", "0.8"]:
+if sa_major_version in ["0.5", "0.6", "0.7", "0.8", "0.9"]:
     from sqlalchemy.databases import postgres
     postgres.ischema_names['debversion'] = DebVersion
 else:
-    raise Exception("dak only ported to SQLA versions 0.5 to 0.8.  See daklib/dbconn.py")
+    raise Exception("dak only ported to SQLA versions 0.5 to 0.9.  See daklib/dbconn.py")
 
 ################################################################################
 
@@ -558,11 +558,8 @@ class DBBinary(ORMObject):
         '''
         import utils
         fullpath = self.poolfile.fullpath
-        deb_file = open(fullpath, 'r')
-        stanza = utils.deb_extract_control(deb_file)
-        deb_file.close()
-
-        return stanza
+        with open(fullpath, 'r') as deb_file:
+            return utils.deb_extract_control(deb_file)
 
     def read_control_fields(self):
         '''
@@ -1158,9 +1155,6 @@ def get_ldap_name(entry):
 ################################################################################
 
 class Keyring(object):
-    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
-                     " --with-colons --fingerprint --fingerprint"
-
     keys = {}
     fpr_lookup = {}
 
@@ -1190,11 +1184,14 @@ class Keyring(object):
         if not self.keyring_id:
             raise Exception('Must be initialized with database information')
 
-        k = os.popen(self.gpg_invocation % keyring, "r")
+        cmd = ["gpg", "--no-default-keyring", "--keyring", keyring,
+               "--with-colons", "--fingerprint", "--fingerprint"]
+        p = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE)
+
         key = None
         need_fingerprint = False
 
-        for line in k:
+        for line in p.stdout:
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
@@ -1213,6 +1210,10 @@ class Keyring(object):
                 self.keys[key]["fingerprints"] = [field[9]]
                 self.fpr_lookup[field[9]] = key
                 need_fingerprint = False
+
+        r = p.wait()
+        if r != 0:
+            raise subprocess.CalledProcessError(r, cmd)
 
     def import_users_from_ldap(self, session):
         import ldap
@@ -2089,27 +2090,28 @@ __all__.append('get_sources_from_name')
 # FIXME: This function fails badly if it finds more than 1 source package and
 # its implementation is trivial enough to be inlined.
 @session_wrapper
-def get_source_in_suite(source, suite, session=None):
+def get_source_in_suite(source, suite_name, session=None):
     """
-    Returns a DBSource object for a combination of C{source} and C{suite}.
+    Returns a DBSource object for a combination of C{source} and C{suite_name}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
-      - B{suite} - a suite name, eg. I{unstable}
+      - B{suite_name} - a suite name, eg. I{unstable}
 
     @type source: string
     @param source: source package name
 
-    @type suite: string
+    @type suite_name: string
     @param suite: the suite name
 
     @rtype: string
     @return: the version for I{source} in I{suite}
 
     """
-
-    q = get_suite(suite, session).get_sources(source)
+    suite = get_suite(suite_name, session)
+    if suite is None:
+        return None
     try:
-        return q.one()
+        return suite.get_sources(source).one()
     except NoResultFound:
         return None
 
