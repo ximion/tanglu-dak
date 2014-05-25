@@ -8,6 +8,12 @@ set -u
 export SCRIPTVARS=/srv/dak/config/tanglu/vars
 . $SCRIPTVARS
 
+PROGRAM="cron.daily"
+# Start logging
+NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+LOGFILE="$logdir/daily_${NOW}.log"
+exec >> "$LOGFILE" 2>&1
+
 ################################################################################
 # Clean out old packages
 dak clean-suites -m 10000
@@ -23,4 +29,8 @@ cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu 2 (Bartholomea) archive 
 # sync the Tanglu bug database
 $scriptsdir/dak-trac-bridge.py
 
-echo "Daily cron scripts successful."
+################################################################################
+echo "Finally, all is done, compressing logfile"
+exec > /dev/null 2>&1
+
+bzip2 -9 "$LOGFILE"
