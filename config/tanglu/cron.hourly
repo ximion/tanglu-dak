@@ -50,20 +50,6 @@ $dakdir/tools-tanglu/removals.pl $configdir/removalsrss.rc > $webdir/rss/removal
 
 $scriptsdir/generate-d-i
 
-# do the buildd key updates
-# FIXME-TANGLU: Find a better way to do this or adjust the scripts
- #BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
- #exec >> "${BUILDDFUN}" 2>&1
- #${scriptsdir}/buildd-remove-keys
- #${scriptsdir}/buildd-add-keys
- #${scriptsdir}/buildd-prepare-dir
-
 for keyring in $(dak admin k list-binary); do
     dak import-keyring --generate-users "%s" ${keyring}
 done
-exec >>/dev/null 2>&1
-
-DATE=$(date -Is)
-cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.tanglu.org -- -F "Tanglu FTP Masters" -f ftpmaster@ftp-master.tanglu.org
-
-rm -f "${BUILDDFUN}"

@@ -26,9 +26,6 @@ dak queue-report -d new,byhand | mail -e -s "Tanglu NEW and BYHAND on $(date +%D
 dak cruft-report -R --mode bdo -s staging -s bartholomea > $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Tanglu 2 (Bartholomea) archive cruft report for $(date +%D)" mak@debian.org
 
-# sync the Tanglu bug database
-$scriptsdir/dak-trac-bridge.py
-
 ################################################################################
 echo "Finally, all is done, compressing logfile"
 exec > /dev/null 2>&1
