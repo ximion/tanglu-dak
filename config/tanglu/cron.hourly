@@ -36,7 +36,7 @@ dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand -r $webdir/stat
 # FIXME: _tanglu: No deferred queue
 #dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
-dak graph -n new,byhand,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
+dak graph -n new,byhand -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
 
 cd $webdir
 # FIXME: _Tanglu disabled
