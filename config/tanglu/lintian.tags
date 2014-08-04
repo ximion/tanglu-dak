@@ -80,4 +80,3 @@ lintian:
     - dir-or-file-in-mnt
     - dir-or-file-in-opt
     - dir-or-file-in-srv
-
