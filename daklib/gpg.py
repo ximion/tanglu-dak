@@ -78,8 +78,11 @@ class SignedFile(object):
         self.keyrings = keyrings
 
         self.valid = False
+        self.expired = False
+        self.invalid = False
         self.fingerprint = None
         self.primary_fingerprint = None
+        self.signature_id = None
 
         self._verify(data, require_signature)
 
@@ -112,6 +115,9 @@ class SignedFile(object):
                 for line in self.status.splitlines():
                     self._parse_status(line)
 
+                if self.invalid:
+                    self.valid = False
+
                 if require_signature and not self.valid:
                     raise GpgException("No valid signature found. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
 
@@ -143,16 +149,25 @@ class SignedFile(object):
 
         return dict( (fd, "".join(read_lines[fd])) for fd in read_lines.keys() )
 
-    def _parse_date(self, value):
-        """parse date string in YYYY-MM-DD format
+    def _parse_timestamp(self, timestamp, datestring=None):
+        """parse timestamp in GnuPG's format
 
         @rtype:   L{datetime.datetime}
-        @returns: datetime objects for 0:00 on the given day
+        @returns: datetime object for the given timestamp
         """
-        year, month, day = value.split('-')
-        date = datetime.date(int(year), int(month), int(day))
-        time = datetime.time(0, 0)
-        return datetime.datetime.combine(date, time)
+        # The old implementation did only return the date. As we already
+        # used this for replay production, return the legacy value for
+        # old signatures.
+        if datestring is not None:
+            year, month, day = datestring.split('-')
+            date = datetime.date(int(year), int(month), int(day))
+            time = datetime.time(0, 0)
+            if date < datetime.date(2014, 8, 4):
+                return datetime.datetime.combine(date, time)
+
+        if 'T' in timestamp:
+            raise Exception('No support for ISO 8601 timestamps.')
+        return datetime.datetime.utcfromtimestamp(long(timestamp))
 
     def _parse_status(self, line):
         fields = line.split()
@@ -163,22 +178,42 @@ class SignedFile(object):
         #             <expire-timestamp> <sig-version> <reserved> <pubkey-algo>
         #             <hash-algo> <sig-class> <primary-key-fpr>
         if fields[1] == "VALIDSIG":
+            if self.fingerprint is not None:
+                raise GpgException("More than one signature is not (yet) supported.")
             self.valid = True
             self.fingerprint = fields[2]
             self.primary_fingerprint = fields[11]
-            self.signature_timestamp = self._parse_date(fields[3])
+            self.signature_timestamp = self._parse_timestamp(fields[4], fields[3])
 
-        if fields[1] == "BADARMOR":
+        elif fields[1] == "BADARMOR":
             raise GpgException("Bad armor.")
 
-        if fields[1] == "NODATA":
+        elif fields[1] == "NODATA":
             raise GpgException("No data.")
 
-        if fields[1] == "DECRYPTION_FAILED":
+        elif fields[1] == "DECRYPTION_FAILED":
             raise GpgException("Decryption failed.")
 
-        if fields[1] == "ERROR":
+        elif fields[1] == "ERROR":
             raise GpgException("Other error: %s %s" % (fields[2], fields[3]))
+
+        elif fields[1] == "SIG_ID":
+            if self.signature_id is not None:
+                raise GpgException("More than one signature id.")
+            self.signature_id = fields[2]
+
+        elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'NOTATION_NAME', 'NOTATION_DATA', 'SIGEXPIRED', 'KEYEXPIRED'):
+            pass
+
+        elif fields[1] in ('EXPSIG', 'EXPKEYSIG'):
+            self.expired = True
+            self.invalid = True
+
+        elif fields[1] in ('REVKEYSIG', 'BADSIG', 'ERRSIG', 'KEYREVOKED', 'NO_PUBKEY'):
+            self.invalid = True
+
+        else:
+            raise GpgException("Keyword '{0}' from GnuPG was not expected.".format(fields[1]))
 
     def _exec_gpg(self, stdin, stdout, stderr, statusfd):
         try:
@@ -200,7 +235,8 @@ class SignedFile(object):
                     "--no-default-keyring",
                     "--batch",
                     "--no-tty",
-                    "--trust-model", "always"]
+                    "--trust-model", "always",
+                    "--fixed-list-mode"]
             for k in self.keyrings:
                 args.append("--keyring=%s" % k)
             args.extend(["--decrypt", "-"])

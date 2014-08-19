@@ -33,16 +33,16 @@ function wbtrigger() {
 
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
-    local overridesuite
-    local suite
-
+    # We generate straight into the static mirror location for incoming
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
-    ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
 
-    rm -f ${incoming}/public/*
-    dak export-suite -s "accepted" -d "$incoming/public"
+    # Stick a last modified date in the page footer
+    echo "<p>Last updated: `date -u`</p>" > ${incoming}/web/README.html
+
+    # Tell the mirrors that we've updated
+    chronic /usr/local/bin/static-update-component incoming.debian.org
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
