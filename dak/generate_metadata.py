@@ -123,6 +123,7 @@ class ComponentData:
         self._file = filename
 
         # properties
+        self._compulsory_for_desktop = None
         self._ignore = False
         self._ID = None
         self._type = None
@@ -159,6 +160,13 @@ class ComponentData:
     @kind.setter
     def kind(self,val):
         self._type = val
+    
+    @property
+    def compulsory_for_desktop(self):
+        return self._compulsory_for_desktop
+    @compulsory_for_desktop.setter
+    def compulsory_for_desktop(self,val):
+        self._compulsory_for_desktop = val
 
     @property
     def name(self):
@@ -590,6 +598,12 @@ class MetaDataExtractor:
 
             if subs.tag == "project_group":
                 compdata.project_group = subs.text
+            
+            if subs.tag == "CompulsoryForDesktop":
+                if compdata.compulsory_for_desktop:
+                    compdata.compulsory_for_desktop.append(subs.text)
+                else:
+                    compdata.compulsory_for_desktop = [subs.text]
 
     def read_metadata(self,suitename,component,binid,filelist,pkg):
         '''
