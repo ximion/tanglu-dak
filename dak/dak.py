@@ -151,6 +151,8 @@ def init():
          "Generate a list of override disparities"),
         ("external-overrides",
          "Modify external overrides"),
+        ("generate-metadata",
+         "Generates DEP-11 yaml files,fetches screenshots and icons,"),
         ]
     return functionality
 
