@@ -4,7 +4,7 @@
 Adds bin_dep table. Stores appstream metadata per binary
 """
 
-# Copyright (C) 2014  Abhishek Bhattacharjee <abhishek.bhattacharjee11@gmail.com>
+# Copyright (C) 2014 Abhishek Bhattacharjee<abhishek.bhattacharjee11@gmail.com>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@ Adds bin_dep table. Stores appstream metadata per binary
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#################################################################################
+############################################################################
 
 # the script is part of project under Google Summer of Code '14
 # Project: AppStream/DEP-11 for the Debian Archive
 # Mentor: Matthias Klumpp
 
-#################################################################################
+############################################################################
 
 
 import psycopg2
@@ -34,19 +34,20 @@ from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
 from daklib.dbconn import *
 statements = [
-"""
-CREATE TABLE bin_dep(id SERIAL PRIMARY KEY,
-binary_id integer not null,
-metadata text not null
-);
-""",
+    """
+    CREATE TABLE bin_dep(id SERIAL PRIMARY KEY,
+    binary_id integer not null,
+    metadata text not null
+    );
+    """,
 
-"""
-ALTER TABLE bin_dep ADD CONSTRAINT binaries_bin_dep
-FOREIGN KEY (binary_id) REFERENCES binaries (id) ON DELETE CASCADE;
-"""
+    """
+    ALTER TABLE bin_dep ADD CONSTRAINT binaries_bin_dep
+    FOREIGN KEY (binary_id) REFERENCES binaries (id) ON DELETE CASCADE;
+    """
 ]
-################################################################################
+##############################################################################
+
 
 def do_update(self):
     print __doc__
@@ -55,8 +56,7 @@ def do_update(self):
         for stmt in statements:
             c.execute(stmt)
         self.db.commit()
-    
+
     except psycopg2.ProgrammingError as msg:
-    
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 103, rollback issued. Error message: {0}'.format(msg))
+        raise DBUpdateError("Unable to apply sick update 103, rollback issued. Error message: {0}".format(msg))
