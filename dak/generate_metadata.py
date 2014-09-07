@@ -1022,9 +1022,9 @@ def main():
     global logfile
     global dep11_header
     logfile = open("{0}genmeta-{1}.txt".format(
-        Config()["Dir::log"], time_str), 'w')
+        Config()["Dir::Log"], time_str), 'w')
     dep11_header["Origin"] = suitename
-    comp_list = ('contrib',)
+    comp_list = Config()["Components::Names"].split(" ")
     for component in comp_list:
         loop_per_component(component, suitename)
 
