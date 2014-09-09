@@ -73,7 +73,7 @@ Generate DEP-11 metadata for the specified suite.
   -C, --clear-cache   use this option to clear stale DEP-11 cached data.
     """)
 
-
+# for python2.7 not required for python3
 def enc_dec(val):
     '''
     Handles encoding decoding for localised values
@@ -343,6 +343,8 @@ class ComponentData:
             dic['ProjectLicense'] = self.project_license
         if self.project_group:
             dic['ProjectGroup'] = self.project_group
+        if self.compulsory_for_desktop:
+            dic['CompulsoryForDesktops'] = self.compulsory_for_desktop
         return dic
 
 
@@ -716,6 +718,7 @@ class ContentGenerator:
     Takes a ComponentData object.And writes the metadat into YAML format
     Stores screenshot and icons.
     '''
+    url = Config()["Url::DEP11"]
     def __init__(self, compdata):
         '''
         List contains componendata of a archtype of a component
@@ -741,7 +744,7 @@ class ContentGenerator:
         '''
         check = path.find('/export/')
         # this would change later
-        url = "http://ftp.debian.org%s" % path[check:]
+        url = "%s%s" % (ContentGenerator.url,path[check:])
         return url
 
     def scale_screenshots(self, imgsrc, path):
