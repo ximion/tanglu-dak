@@ -827,7 +827,13 @@ class ContentGenerator:
         # filepath is checked because icon can reside in another binary
         # eg amarok's icon is in amarok-data
         if os.path.exists(filepath):
-            icon_data = DebFile(filepath).data.extractdata(icon)
+            icon_data = None
+            try:
+                icon_data = DebFile(filepath).data.extractdata(icon)
+            except Exception as e:
+                print("Error while extracting icon (%s): %s" % (filepath, e))
+                return False
+
             if icon_data:
                 if not os.path.exists(path):
                     os.makedirs(os.path.dirname(path))
