@@ -697,9 +697,6 @@ class MetaDataExtractor:
                     # ignore if ID is not present for an xml, it is not valid!
                     compdata.ignore = True
 
-        else:
-            print('xml list is empty for the deb ' + self._filename)
-
         # Reading the desktop files other than the file which matches
         # the id in the xml file
         if self._lodesk:
@@ -711,8 +708,6 @@ class MetaDataExtractor:
                 if not compdata.ignore:
                     compdata.ID = self.find_id(dfile)
                     component_list.append(compdata)
-        else:
-            print('desktop list is empty for the deb ' + self._filename)
 
         return component_list
 
@@ -839,7 +834,7 @@ class ContentGenerator:
                 f = open("{0}/{1}".format(path, icon_name), "wb")
                 f.write(icon_data)
                 f.close()
-                print("Saved icon....")
+                print("Saved icon %s." % (icon_name))
                 return True
         return False
 
@@ -951,7 +946,7 @@ def make_icon_tar(suitename, component):
     shutil.rmtree(copy_location)
 
 
-def loop_per_component(component, suitename=None):
+def loop_per_component(component, suitename):
     '''
     Run by main to loop for different component and architecture.
     '''
@@ -1003,7 +998,7 @@ def loop_per_component(component, suitename=None):
         pool.saver()
 
     make_icon_tar(suitename, component)
-    print("Done with component ", component)
+    print("Done with component %s in suite %s" % (component, suitename))
 
 
 def main():
