@@ -34,7 +34,6 @@ beloging to a given suite.
 
 
 from apt_inst import DebFile
-from apt import debfile
 import lxml.etree as et
 import yaml
 import re
@@ -366,8 +365,13 @@ class MetaDataExtractor:
         '''
         Returns a list of all files in a deb package
         '''
-        filelist = debfile.DebPackage(self._filename).filelist
-        return filelist
+        files = []
+        try:
+            self._deb.data.go(lambda item, data: files.append(item.name))
+        except SystemError:
+            return [_("List of files for '%s' could not be read") %
+                    self.filename]
+        return files
 
     def notcomment(self, line=None):
         '''
