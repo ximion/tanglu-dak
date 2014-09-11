@@ -1022,13 +1022,17 @@ def main():
     if '-C' in args or '--clear-cache' in args:
         clear_cached_dep11_data(suitename)
 
+    from daklib.dbconn import Component, DBConn, get_suite, Suite
+    session = DBConn().session()
+    suite = get_suite(suitename.lower(), session)
+
     global logfile
     global dep11_header
     logfile = open("{0}genmeta-{1}.txt".format(
         Config()["Dir::Log"], time_str), 'w')
     dep11_header["Origin"] = suitename
-    comp_list = Config()["Components::Names"].split(" ")
-    for component in comp_list:
+    component_names = [ c.component_name for c in suite.components ]
+    for component in component_names:
         loop_per_component(component, suitename)
 
     logfile.close()
