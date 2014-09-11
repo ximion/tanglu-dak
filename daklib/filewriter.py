@@ -165,7 +165,7 @@ class TranslationFileWriter(BaseFileWriter):
         template = "%(archive)s/dists/%(suite)s/%(component)s/i18n/Translation-%(language)s"
         super(TranslationFileWriter, self).__init__(template, **flags)
 
-class ComponentDataFileWriter(BaseFileWriter):
+class DEP11DataFileWriter(BaseFileWriter):
     def __init__(self, **keywords):
         '''
         The value of the keywords suite and component are strings.
@@ -175,5 +175,5 @@ class ComponentDataFileWriter(BaseFileWriter):
             'compression':['xz'],
         }
         flags.update(keywords)
-        template = Config()["Dir::Root"]+"dists/%(suite)s/%(component)s/Component-%(architecture)s.yml"
+        template = "%(archive)s/dists/%(suite)s/%(component)s/Components-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)

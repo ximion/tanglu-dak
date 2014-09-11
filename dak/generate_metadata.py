@@ -34,7 +34,6 @@ beloging to a given suite.
 
 
 from apt_inst import DebFile
-from apt import debfile
 import lxml.etree as et
 import yaml
 import re
@@ -51,7 +50,7 @@ from PIL import Image
 from subprocess import CalledProcessError
 from check_appdata import appdata, findicon, clear_cached_dep11_data
 from daklib.daksubprocess import call, check_call
-from daklib.filewriter import ComponentDataFileWriter
+from daklib.filewriter import DEP11DataFileWriter
 from daklib.config import Config
 from insert_dep import DEP11Metadata
 
@@ -366,8 +365,13 @@ class MetaDataExtractor:
         '''
         Returns a list of all files in a deb package
         '''
-        filelist = debfile.DebPackage(self._filename).filelist
-        return filelist
+        files = []
+        try:
+            self._deb.data.go(lambda item, data: files.append(item.name))
+        except SystemError:
+            return [_("List of files for '%s' could not be read") %
+                    self.filename]
+        return files
 
     def notcomment(self, line=None):
         '''
@@ -693,9 +697,6 @@ class MetaDataExtractor:
                     # ignore if ID is not present for an xml, it is not valid!
                     compdata.ignore = True
 
-        else:
-            print('xml list is empty for the deb ' + self._filename)
-
         # Reading the desktop files other than the file which matches
         # the id in the xml file
         if self._lodesk:
@@ -707,8 +708,6 @@ class MetaDataExtractor:
                 if not compdata.ignore:
                     compdata.ID = self.find_id(dfile)
                     component_list.append(compdata)
-        else:
-            print('desktop list is empty for the deb ' + self._filename)
 
         return component_list
 
@@ -835,7 +834,7 @@ class ContentGenerator:
                 f = open("{0}/{1}".format(path, icon_name), "wb")
                 f.write(icon_data)
                 f.close()
-                print("Saved icon....")
+                print("Saved icon %s." % (icon_name))
                 return True
         return False
 
@@ -898,7 +897,7 @@ class MetadataPool:
         Writes yaml doc, saves metadata in db and stores icons
         and screenshots
         """
-        writer = ComponentDataFileWriter(**self._values)
+        writer = DEP11DataFileWriter(**self._values)
         head_string = yaml.dump(dep11_header, Dumper=DEP11YAMLDumper,
                                 default_flow_style=False, explicit_start=True,
                                 explicit_end=False, width=100, indent=2)
@@ -947,59 +946,61 @@ def make_icon_tar(suitename, component):
     shutil.rmtree(copy_location)
 
 
-def loop_per_component(component, suitename=None):
+def process_suite(suite):
     '''
     Run by main to loop for different component and architecture.
     '''
     path = Config()["Dir::Pool"]
 
     print("Reading data...")
-    datalist = appdata()
-    # datalist.find_desktop(component=component,suitename=suitename)
-    # datalist.find_xml(component=component,suitename=suitename)
-    datalist.find_meta_files(component=component, suitename=suitename)
-    datalist.close()
-    print("data read complete")
+    for component in [ c.component_name for c in suite.components ]:
+        datalist = appdata()
+        # datalist.find_desktop(component=component,suitename=suitename)
+        # datalist.find_xml(component=component,suitename=suitename)
+        datalist.find_meta_files(component=component, suitename=suite.suite_name)
+        datalist.close()
+        print("data read complete")
 
-    desk_dic = datalist._deskdic
-    xml_dic = datalist._xmldic
+        desk_dic = datalist._deskdic
+        xml_dic = datalist._xmldic
 
-    info_dic = datalist._idlist
-    pkg_list = datalist._pkglist
+        info_dic = datalist._idlist
+        pkg_list = datalist._pkglist
 
-    for arch in datalist.arch_deblist.iterkeys():
-        values = {
-            'suite': suitename,
-            'component': component,
-            'architecture': arch
-        }
-        pool = MetadataPool(values)
+        for arch in datalist.arch_deblist.iterkeys():
+            values = {
+                'archive': suite.archive.path,
+                'suite': suite.suite_name,
+                'component': component,
+                'architecture': arch,
+            }
+            pool = MetadataPool(values)
 
-        for key in datalist.arch_deblist[arch]:
-            print("Processing deb: %s" % (key))
-            xmlfiles = []
-            deskfiles = []
-            if xml_dic:
-                xmlfiles = xml_dic.get(key)
-            if desk_dic:
-                deskfiles = desk_dic.get(key)
+            for key in datalist.arch_deblist[arch]:
+                print("Processing deb: %s" % (key))
+                xmlfiles = []
+                deskfiles = []
+                if xml_dic:
+                    xmlfiles = xml_dic.get(key)
+                if desk_dic:
+                    deskfiles = desk_dic.get(key)
 
-            # loop over all_dic to find metadata of all the debian packages
-            if os.path.exists(path+key):
-                mde = MetaDataExtractor(path+key, xmlfiles, deskfiles)
-                filelist = mde.filelist()
-                cd_list = mde.read_metadata(suitename, component,
-                                            str(info_dic[key]),
-                                            filelist, pkg_list[key])
-                pool.append_compdata(cd_list)
-            else:
-                print('Invalid path %s' % (path+key))
+                # loop over all_dic to find metadata of all the debian packages
+                if os.path.exists(path+key):
+                    mde = MetaDataExtractor(path+key, xmlfiles, deskfiles)
+                    filelist = mde.filelist()
+                    cd_list = mde.read_metadata(suite.suite_name, component,
+                                                str(info_dic[key]),
+                                                filelist, pkg_list[key])
+                    pool.append_compdata(cd_list)
+                else:
+                    print('Invalid path %s' % (path+key))
 
-        # Save metadata of all binaries of the Component-arch
-        pool.saver()
+            # Save metadata of all binaries of the Components-arch
+            pool.saver()
 
-    make_icon_tar(suitename, component)
-    print("Done with component ", component)
+        make_icon_tar(suite.suite_name, component)
+        print("Done with component %s in suite %s" % (component, suite.suite_name))
 
 
 def main():
@@ -1022,14 +1023,17 @@ def main():
     if '-C' in args or '--clear-cache' in args:
         clear_cached_dep11_data(suitename)
 
+    from daklib.dbconn import Component, DBConn, get_suite, Suite
+    session = DBConn().session()
+    suite = get_suite(suitename.lower(), session)
+
     global logfile
     global dep11_header
     logfile = open("{0}genmeta-{1}.txt".format(
         Config()["Dir::Log"], time_str), 'w')
     dep11_header["Origin"] = suitename
-    comp_list = Config()["Components::Names"].split(" ")
-    for component in comp_list:
-        loop_per_component(component, suitename)
+
+    process_suite(suite)
 
     logfile.close()
 
