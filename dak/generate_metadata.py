@@ -684,9 +684,13 @@ class MetaDataExtractor:
         # Reading xml files and associated .desktop
         if self._loxml:
             for meta_file in self._loxml:
+                xml_content = str(self._deb.data.extractdata(meta_file))
+                if not xml_content:
+                    # xml file is broken,read next xml file
+                    continue
+
                 compdata = ComponentData(suitename, component, binid,
                                          self._filename, filelist, pkg)
-                xml_content = str(self._deb.data.extractdata(meta_file))
                 self.read_xml(xml_content, compdata)
                 # Reads the desktop files associated with the xml file
                 if compdata.ID:
@@ -695,8 +699,9 @@ class MetaDataExtractor:
                             # for desktop file matching the ID
                             if compdata.ID in dfile:
                                 dcontent = self._deb.data.extractdata(dfile)
-                                self.read_desktop(dcontent, compdata)
-                                # overwriting the Type field of .desktop by xml
+                                if dcontent:
+                                    self.read_desktop(dcontent, compdata)
+
                                 self._lodesk.remove(dfile)
 
                     if not compdata.ignore:
@@ -709,9 +714,13 @@ class MetaDataExtractor:
         # the id in the xml file
         if self._lodesk:
             for dfile in self._lodesk:
+                dcontent = self._deb.data.extractdata(dfile)
+                if not dcontent:
+                    # .desktop file is broken, read next .desktop file
+                    continue
+
                 compdata = ComponentData(suitename, component, binid,
                                          self._filename, filelist, pkg)
-                dcontent = self._deb.data.extractdata(dfile)
                 self.read_desktop(dcontent, compdata)
                 if not compdata.ignore:
                     compdata.ID = self.find_id(dfile)
@@ -835,22 +844,6 @@ class ContentGenerator:
         # filepath is checked because icon can reside in another binary
         # eg amarok's icon is in amarok-data
         if os.path.exists(filepath):
-<<<<<<< HEAD
-            try:
-                icon_data = DebFile(filepath).data.extractdata(icon)
-                if icon_data:
-                    if not os.path.exists(path):
-                        os.makedirs(os.path.dirname(path))
-                    f = open("{0}/{1}".format(path, icon_name), "wb")
-                    f.write(icon_data)
-                    f.close()
-                    print("Saved icon %s." % (icon_name))
-                    return True
-            except:
-                # icons broken.
-                return False
-=======
-            icon_data = None
             try:
                 icon_data = DebFile(filepath).data.extractdata(icon)
             except Exception as e:
@@ -865,7 +858,6 @@ class ContentGenerator:
                 f.close()
                 print("Saved icon %s." % (icon_name))
                 return True
->>>>>>> ximion-master
         return False
 
     def fetch_icon(self, values):
@@ -958,17 +950,13 @@ def make_icon_tar(suitename, component):
     tar_location = "%sdists/%s/%s/" % \
                    (Config()["Dir::Root"], suitename, component)
 
-    if not os.path.exists(copy_location):
-        os.makedirs(os.path.dirname(copy_location))
-
     tar = tarfile.open("%sIcons-%s.tar.gz" % (tar_location, component), "w:gz")
 
     for filename in glob.glob(location+"*.*"):
         icon_name = filename.split('/').pop()
-        tar.addfile(tarfile.TarInfo(icon_name),file(filename))
+        tar.add(filename,arcname=icon_name)
 
     tar.close()
-    shutil.rmtree(copy_location)
 
 
 def process_suite(suite):
