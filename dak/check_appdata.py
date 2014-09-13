@@ -106,7 +106,8 @@ class appdata:
         from bin_contents bc,req_data rd
         where (bc.file like 'usr/share/appdata/%.xml' or
         bc.file like 'usr/share/applications/%.desktop')
-        and bc.binary_id = rd.id
+        and bc.binary_id = rd.id and rd.id not in
+        (select binary_id from bin_dep)
         """
 
         result = self._session.query("file", "filename", "name", "id",
@@ -422,29 +423,25 @@ def clear_cached_dep11_data(suitename):
 #############################################################################
 
 # For testing
-'''
+
 if __name__ == "__main__":
-   # ##
+    '''   # ##
     ap = appdata()
     ap.comb_appdata()
     ap.printfiles()
     f = findicon("aqemu","aqemu",48)
     f.queryicon()
-   # ##
+    # ##
     #clear_cached_dep11_data()
+    '''
     ap = appdata()
     #    ap.find_desktop(component = 'main', suitename='aequorea')
     #    ap.find_xml(component = 'main', suitename='aequorea')
-
-    ap.find_meta_files(component='main',suitename='aequorea')
+    ap.find_meta_files(component='main',suitename='bartholomea')
     for arc in ap.arch_deblist.keys():
+        print arc
         for k in ap.arch_deblist[arc]:
-            if 'gaupol' in k:
-                print 'xmls--> ',ap._xmldic.get(k)
-                print 'desks--> ',ap._deskdic.get(k)
-                print 'key-> ',k
-                print 'pkg-> ',ap._pkglist[k]
-                print 'id-> ',ap._idlist[k]
+            print (k,ap._pkglist[k],ap._idlist[k])
 
+        print(ap._deskdic)
     ap.close()
-'''
