@@ -500,7 +500,7 @@ class MetaDataExtractor:
 
     def neat(self, s):
         '''
-        Utility for do_description
+        Utility for parse_description_tag
         '''
         s = s.strip()
         s = " ".join(s.split())
@@ -776,11 +776,10 @@ class ContentGenerator:
         if self._cdata.screenshots:
             success = []
             shots = []
+            cnt = 1
             for shot in self._cdata.screenshots:
                 try:
                     image = urllib.urlopen(shot['source-image']['url']).read()
-                    has = sha.new(image)
-                    hd = has.hexdigest()
                     template = (Config()["Dir::MetaInfo"] +
                                 "%(suite)s/%(component)s/")
                     path = template % values
@@ -788,23 +787,24 @@ class ContentGenerator:
                            (path, self._cdata._pkg, str(self._cdata._binid))
                     if not os.path.exists(path):
                         os.makedirs(os.path.dirname(path + "source/"))
-                    f = open('%ssource/screenshot-%s.png' % (path, hd), 'wb')
+                    f = open('%ssource/screenshot-%s.png' % (path, str(cnt)), 'wb')
                     f.write(image)
                     f.close()
-                    img = Image.open('%ssource/screenshot-%s.png' % (path, hd))
+                    img = Image.open('%ssource/screenshot-%s.png' % (path, str(cnt)))
                     wd, ht = img.size
                     shot['source-image']['width'] = wd
                     shot['source-image']['height'] = ht
                     shot['source-image']['url'] = self.make_url(
-                        '%ssource/screenshot-%s.png' % (path, hd))
+                        '%ssource/screenshot-%s.png' % (path, str(cnt)))
                     img.close()
+                    success.append(True)
                     # scale_screenshots will return a list of
                     # dicts with {height,width,url}
                     shot['thumbnails'] = self.scale_screenshots(
-                        '%ssource/screenshot-%s.png' % (path, hd), path)
+                        '%ssource/screenshot-%s.png' % (path, str(cnt)), path)
                     shots.append(shot)
-                    success.append(True)
                     print("Screenshot saved...")
+                    cnt = cnt + 1
                 except:
                     success.append(False)
 
@@ -827,15 +827,19 @@ class ContentGenerator:
         # filepath is checked because icon can reside in another binary
         # eg amarok's icon is in amarok-data
         if os.path.exists(filepath):
-            icon_data = DebFile(filepath).data.extractdata(icon)
-            if icon_data:
-                if not os.path.exists(path):
-                    os.makedirs(os.path.dirname(path))
-                f = open("{0}/{1}".format(path, icon_name), "wb")
-                f.write(icon_data)
-                f.close()
-                print("Saved icon %s." % (icon_name))
-                return True
+            try:
+                icon_data = DebFile(filepath).data.extractdata(icon)
+                if icon_data:
+                    if not os.path.exists(path):
+                        os.makedirs(os.path.dirname(path))
+                    f = open("{0}/{1}".format(path, icon_name), "wb")
+                    f.write(icon_data)
+                    f.close()
+                    print("Saved icon %s." % (icon_name))
+                    return True
+            except:
+                # icons broken.
+                return False
         return False
 
     def fetch_icon(self, values):
@@ -846,6 +850,7 @@ class ContentGenerator:
         if self._cdata.icon:
             icon = self._cdata.icon
             self._cdata.icon = icon.split('/').pop()
+
             if icon.endswith('.xpm') or icon.endswith('.tiff'):
                 self._cdata.ignore = True
                 return False
@@ -926,22 +931,16 @@ def make_icon_tar(suitename, component):
                (Config()["Dir::MetaInfo"], suitename, component)
     tar_location = "%sdists/%s/%s/" % \
                    (Config()["Dir::Root"], suitename, component)
-    copy_location = tar_location + "Icons/"
 
     if not os.path.exists(copy_location):
         os.makedirs(os.path.dirname(copy_location))
 
+    tar = tarfile.open("%sIcons-%s.tar.gz" % (tar_location, component), "w:gz")
+
     for filename in glob.glob(location+"*.*"):
         icon_name = filename.split('/').pop()
-        img = open(filename, "rb")
-        img_data = img.read()
-        img.close()
-        img_copy = open(copy_location+icon_name, "wb")
-        img_copy.write(img_data)
-        img_copy.close()
+        tar.addfile(tarfile.TarInfo(icon_name),file(filename))
 
-    tar = tarfile.open("%sIcons-%s.tar.gz" % (tar_location, component), "w:gz")
-    tar.add(copy_location, arcname="Icons-%s" % component)
     tar.close()
     shutil.rmtree(copy_location)
 
