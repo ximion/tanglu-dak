@@ -357,7 +357,11 @@ class MetaDataExtractor:
         Initialize the object with List of files.
         '''
         self._filename = filename
-        self._deb = DebFile(filename)
+        self._deb = None
+        try:
+            self._deb = DebFile(filename)
+        except Exception as e:
+            print ("Error reading deb file '%s': %s" % (filename , e))
         self._loxml = xml_list
         self._lodesk = desk_list
 
@@ -365,7 +369,9 @@ class MetaDataExtractor:
         '''
         Returns a list of all files in a deb package
         '''
-        files = []
+        files = list()
+        if not self._deb:
+            return files
         try:
             self._deb.data.go(lambda item, data: files.append(item.name))
         except SystemError:
@@ -672,7 +678,9 @@ class MetaDataExtractor:
         Reads the metadata from the xml file and the desktop files.
         And returns a list of ComponentData objects.
         '''
-        component_list = []
+        component_list = list()
+        if not self._deb:
+            return component_list
         # Reading xml files and associated .desktop
         if self._loxml:
             for meta_file in self._loxml:
@@ -827,6 +835,7 @@ class ContentGenerator:
         # filepath is checked because icon can reside in another binary
         # eg amarok's icon is in amarok-data
         if os.path.exists(filepath):
+<<<<<<< HEAD
             try:
                 icon_data = DebFile(filepath).data.extractdata(icon)
                 if icon_data:
@@ -840,6 +849,23 @@ class ContentGenerator:
             except:
                 # icons broken.
                 return False
+=======
+            icon_data = None
+            try:
+                icon_data = DebFile(filepath).data.extractdata(icon)
+            except Exception as e:
+                print("Error while extracting icon (%s): %s" % (filepath, e))
+                return False
+
+            if icon_data:
+                if not os.path.exists(path):
+                    os.makedirs(os.path.dirname(path))
+                f = open("{0}/{1}".format(path, icon_name), "wb")
+                f.write(icon_data)
+                f.close()
+                print("Saved icon %s." % (icon_name))
+                return True
+>>>>>>> ximion-master
         return False
 
     def fetch_icon(self, values):
