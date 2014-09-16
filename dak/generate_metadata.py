@@ -685,46 +685,41 @@ class MetaDataExtractor:
         if self._loxml:
             for meta_file in self._loxml:
                 xml_content = str(self._deb.data.extractdata(meta_file))
-                if not xml_content:
+                if xml_content:
                     # xml file is broken,read next xml file
-                    continue
+                    compdata = ComponentData(suitename, component, binid,
+                                             self._filename, filelist, pkg)
+                    self.read_xml(xml_content, compdata)
+                    # Reads the desktop files associated with the xml file
+                    if compdata.ID:
+                        if('.desktop' in compdata.ID) and self._lodesk:
+                            for dfile in self._lodesk:
+                                # for desktop file matching the ID
+                                if compdata.ID in dfile:
+                                    dcontent = self._deb.data.extractdata(dfile)
+                                    if dcontent:
+                                        self.read_desktop(dcontent, compdata)
 
-                compdata = ComponentData(suitename, component, binid,
-                                         self._filename, filelist, pkg)
-                self.read_xml(xml_content, compdata)
-                # Reads the desktop files associated with the xml file
-                if compdata.ID:
-                    if('.desktop' in compdata.ID) and self._lodesk:
-                        for dfile in self._lodesk:
-                            # for desktop file matching the ID
-                            if compdata.ID in dfile:
-                                dcontent = self._deb.data.extractdata(dfile)
-                                if dcontent:
-                                    self.read_desktop(dcontent, compdata)
+                                    self._lodesk.remove(dfile)
 
-                                self._lodesk.remove(dfile)
-
-                    if not compdata.ignore:
-                        component_list.append(compdata)
-                else:
-                    # ignore if ID is not present for an xml, it is not valid!
-                    compdata.ignore = True
+                            if not compdata.ignore:
+                                component_list.append(compdata)
+                    else:
+                        # ignore if ID is not present for an xml, it is not valid!
+                        compdata.ignore = True
 
         # Reading the desktop files other than the file which matches
         # the id in the xml file
         if self._lodesk:
             for dfile in self._lodesk:
                 dcontent = self._deb.data.extractdata(dfile)
-                if not dcontent:
-                    # .desktop file is broken, read next .desktop file
-                    continue
-
-                compdata = ComponentData(suitename, component, binid,
-                                         self._filename, filelist, pkg)
-                self.read_desktop(dcontent, compdata)
-                if not compdata.ignore:
-                    compdata.ID = self.find_id(dfile)
-                    component_list.append(compdata)
+                if dcontent:
+                    compdata = ComponentData(suitename, component, binid,
+                                             self._filename, filelist, pkg)
+                    self.read_desktop(dcontent, compdata)
+                    if not compdata.ignore:
+                        compdata.ID = self.find_id(dfile)
+                        component_list.append(compdata)
 
         return component_list
 
