@@ -4,7 +4,7 @@
 Adds bin_dep table. Stores appstream metadata per binary
 """
 
-# Copyright (C) 2014 Abhishek Bhattacharjee<abhishek.bhattacharjee11@gmail.com>
+# Copyright (C) 2014 Abhishek Bhattacharjee <abhishek.bhattacharjee11@gmail.com>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,14 +35,15 @@ from daklib.config import Config
 from daklib.dbconn import *
 statements = [
     """
-    CREATE TABLE bin_dep(id SERIAL PRIMARY KEY,
+    CREATE TABLE bin_dep11(id SERIAL PRIMARY KEY,
     binary_id integer not null,
-    metadata text not null
+    metadata text not null,
+    ignore boolean not null
     );
     """,
 
     """
-    ALTER TABLE bin_dep ADD CONSTRAINT binaries_bin_dep
+    ALTER TABLE bin_dep11 ADD CONSTRAINT binaries_bin_dep11
     FOREIGN KEY (binary_id) REFERENCES binaries (id) ON DELETE CASCADE;
     """
 ]

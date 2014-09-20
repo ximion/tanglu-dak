@@ -8,7 +8,7 @@ screenshot cache and tarball of all the icons of packages
 beloging to a given suite.
 """
 
-# Copyright (C) 2014 Abhishek Bhattacharjee<abhishek.bhattacharjee11@gmail.com>
+# Copyright (C) 2014 Abhishek Bhattacharjee <abhishek.bhattacharjee11@gmail.com>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ import os
 import os.path
 from PIL import Image
 from subprocess import CalledProcessError
-from check_appdata import appdata, findicon, clear_cached_dep11_data
+from check_appdata import *
 from daklib.daksubprocess import call, check_call
 from daklib.filewriter import DEP11DataFileWriter
 from daklib.config import Config
@@ -726,27 +726,29 @@ class MetaDataExtractor:
 
 class ContentGenerator:
     '''
-    Takes a ComponentData object.And writes the metadat into YAML format
-    Stores screenshot and icons.
+    Takes a ComponentData object.And genrates the metadata into YAML format
+    Dumps it into the db screenshot and icons.
     '''
+    # static will be same thorughout
     url = Config()["Url::DEP11"]
+
     def __init__(self, compdata):
         '''
         List contains componendata of a archtype of a component
         '''
         self._cdata = compdata
 
-    def write_meta(self, dic, ofile, dep11):
+    def dump_meta(self, dic, flag, ofile, dep11):
         '''
-        Saves Appstream metadata in yaml format and also invokes
-        the fetch_store function.
+        Genrerates Appstream metadata in yaml format and also dumps
+        it into the db( bin_dep11 table)
         '''
+        # get the metadata in YAML format
         metadata = yaml.dump(dic, Dumper=DEP11YAMLDumper,
                              default_flow_style=False, explicit_start=True,
                              explicit_end=False, width=100, indent=2,
                              allow_unicode=True)
-        ofile.write(metadata)
-        dep11.insertdata(self._cdata._binid, metadata)
+        dep11.insertdata(self._cdata._binid, metadata, flag)
         dep11._session.commit()
 
     def make_url(self, path):
@@ -912,24 +914,18 @@ class MetadataPool:
 
     def saver(self):
         """
-        Writes yaml doc, saves metadata in db and stores icons
+        Saves metadata in db(in YAML) and stores icons
         and screenshots
         """
-        writer = DEP11DataFileWriter(**self._values)
-        head_string = yaml.dump(dep11_header, Dumper=DEP11YAMLDumper,
-                                default_flow_style=False, explicit_start=True,
-                                explicit_end=False, width=100, indent=2)
-        ofile = writer.open()
-        ofile.write(head_string)
         dep11 = DEP11Metadata()
         for cdata in self._list:
             cg = ContentGenerator(cdata)
             screen_bool = cg.fetch_screenshots(self._values)
             icon_bool = cg.fetch_icon(self._values)
             dic = cg._cdata.serialize_to_dic()
-            if (screen_bool or icon_bool) and not cg._cdata.ignore:
-                cg.write_meta(dic, ofile, dep11)
-        writer.close()
+            # if flag is true we ignore while writing
+            flag = (not (screen_bool or icon_bool)) or cg._cdata.ignore
+            cg.dump_meta(dic, ofile, dep11, flag)
         dep11.close()
 
 ##############################################################################
@@ -952,6 +948,10 @@ def make_icon_tar(suitename, component):
         tar.add(filename,arcname=icon_name)
 
     tar.close()
+
+# defining a __arch__ dict. Lists archs per component. 
+# Used while wroiting metatdata.
+__arch__ = {}
 
 
 def process_suite(suite):
@@ -982,6 +982,14 @@ def process_suite(suite):
                 'component': component,
                 'architecture': arch,
             }
+            
+            # populating arch[component] list
+            if __arch__.get(component):
+                if arch not in __arch__[component]:
+                    __arch__[component].append(arch)
+            else:
+                __arch__[component] = [arch]
+
             pool = MetadataPool(values)
 
             for key in datalist.arch_deblist[arch]:
@@ -1003,14 +1011,41 @@ def process_suite(suite):
                     pool.append_compdata(cd_list)
                 else:
                     print('Invalid path %s' % (path+key))
-
+                    
             # Save metadata of all binaries of the Components-arch
+            # This would require a lock
             pool.saver()
 
         make_icon_tar(suite.suite_name, component)
         print("Done with component %s in suite %s" % (component, suite.suite_name))
 
 
+def write_component_files(suite,suitename):
+    '''
+    Writes the metadata into Component-<arch>.xz
+    Ignores if ignore is True in the db
+    '''
+    for component in [ c.component_name for c in suite.components ]:
+        # writing per <arch>
+        for arch in __arch__[component]:
+            head_string = yaml.dump(dep11_header, Dumper=DEP11YAMLDumper,
+                                    default_flow_style=False, explicit_start=True,
+                                    explicit_end=False, width=100, indent=2)
+            values = { 'suite' : suitename,
+                       'component' : component,
+                       'architecture' : arch
+                       }
+            writer = DEP11DataFileWriter(values)
+            ofile = writer.open()
+            ofile.write(head_string)
+            dep11_data = bin_dep11_data(values)
+            res = dep11_data.fetch_docs()
+            for doc in res:
+                ofile.write(doc[0])
+            dep11_data.close()
+            writer.close()
+
+    
 def main():
     if len(sys.argv) < 2:
         usage()

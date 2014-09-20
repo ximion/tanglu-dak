@@ -3,7 +3,7 @@
 Inserts appstream metadata per binary.
 """
 
-# Copyright (C) 2014 Abhishek Bhattacharjee<abhishek.bhattacharjee11@gmail.com>
+# Copyright (C) 2014 Abhishek Bhattacharjee <abhishek.bhattacharjee11@gmail.com>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,14 +35,14 @@ class DEP11Metadata():
     def __init__(self):
         self._session = DBConn().session()
 
-    def insertdata(self, binid, yamldoc):
-        d = {"bin_id": binid, "yaml_data": yamldoc}
-        sql = """insert into bin_dep(binary_id,metadata)
-        VALUES (:bin_id, :yaml_data)"""
+    def insertdata(self, binid, yamldoc,flag):
+        d = {"bin_id": binid, "yaml_data": yamldoc, "ignore":flag}
+        sql = """insert into bin_dep11(binary_id,metadata,ignore)
+        VALUES (:bin_id, :yaml_data, :ignore)"""
         self._session.execute(sql, d)
 
     def removedata(self, suitename):
-        sql = """delete from bin_dep where binary_id in
+        sql = """delete from bin_dep11 where binary_id in
         (select distinct(b.id) from binaries b,override o,suite s
         where b.package = o.package and o.suite = s.id
         and s.suite_name= :suitename)"""

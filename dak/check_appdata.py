@@ -7,7 +7,7 @@ a list as value.
 Finds icons for packages with missing icons.
 """
 
-# Copyright (C) 2014 Abhishek Bhattacharjee<abhishek.bhattacharjee11@gmail.com>
+# Copyright (C) 2014 Abhishek Bhattacharjee <abhishek.bhattacharjee11@gmail.com>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -129,7 +129,7 @@ class appdata:
         where (bc.file like 'usr/share/appdata/%.xml' or
         bc.file like 'usr/share/applications/%.desktop')
         and bc.binary_id = rd.id and rd.id not in
-        (select binary_id from bin_dep)
+        (select binary_id from bin_dep11)
         """
         '''
 
@@ -396,6 +396,43 @@ class findicon():
         """
         self._session.close()
 
+
+class bin_dep11_data():
+    def __init__(self,params):
+        self._params = params
+        self._session = DBConn().session()
+
+    def fetch_docs():
+        '''
+        Fetches the YAML docs if the ignore field is false
+        Per arch per component per suite basis
+        '''
+        # SQL to fetch metadata
+        sql = """
+        select bd.metadata
+        from
+        bin_dep11 bd, binaries b, bin_associations ba, suite s, 
+        override o, component c, architecture a
+        where bd.ignore = FALSE and bd.binary_id = b.id and b.package = o.package
+        and o.component = c.id and c.name = :component and b.id = ba.bin
+        and ba.suite = s.id and s.suite_name = :suite and
+        b.architecture = a.id and a.arch_string = :architecture
+        """
+
+        result = self._session.execute(sql, self._params)
+        rows = result.fetchall()
+        return rows
+    
+    def close():
+        """
+        Closes the session
+        """
+        self._session.close()
+
+        
+
+
+
 ############################################################################
 
 
@@ -412,7 +449,7 @@ def clear_cached_dep11_data(suitename):
     # select all the binids with a package-name
     # (select all package-name from binaries)
     sql = """select bd.binary_id,b.package
-    from bin_dep bd, binaries b
+    from bin_dep11 bd, binaries b
     where b.id = bd.binary_id"""
 
     q = session.execute(sql)
