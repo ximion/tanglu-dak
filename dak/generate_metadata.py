@@ -32,7 +32,6 @@ beloging to a given suite.
 
 ###########################################################################
 
-
 from apt_inst import DebFile
 import lxml.etree as et
 import yaml
@@ -52,7 +51,7 @@ from check_appdata import *
 from daklib.daksubprocess import call, check_call
 from daklib.filewriter import DEP11DataFileWriter
 from daklib.config import Config
-from insert_dep import DEP11Metadata
+from daklib.dbconn import *
 
 ###########################################################################
 DEP11_VERSION = "0.6"
@@ -63,6 +62,30 @@ dep11_header = {
     "Version": DEP11_VERSION
 }
 ###########################################################################
+
+# TODO: Convert to SQLAlchemy ORM
+# TODO: Move to dbconn.py
+class DEP11Metadata():
+
+    def __init__(self):
+        self._session = DBConn().session()
+
+    def insertdata(self, binid, yamldoc,flag):
+        d = {"bin_id": binid, "yaml_data": yamldoc, "ignore":flag}
+        sql = """insert into bin_dep11(binary_id,metadata,ignore)
+        VALUES (:bin_id, :yaml_data, :ignore)"""
+        self._session.execute(sql, d)
+
+    def removedata(self, suitename):
+        sql = """delete from bin_dep11 where binary_id in
+        (select distinct(b.id) from binaries b,override o,suite s
+        where b.package = o.package and o.suite = s.id
+        and s.suite_name= :suitename)"""
+        self._session.execute(sql, {"suitename": suitename})
+        self._session.commit()
+
+    def close(self):
+        self._session.close()
 
 def usage():
     print("""Usage: dak generate_metadata -s <suitename> [OPTION]
