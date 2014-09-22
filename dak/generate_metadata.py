@@ -64,7 +64,6 @@ dep11_header = {
 }
 ###########################################################################
 
-
 def usage():
     print("""Usage: dak generate_metadata -s <suitename> [OPTION]
 Generate DEP-11 metadata for the specified suite.
@@ -570,8 +569,9 @@ class MetaDataExtractor:
                     if attr_dic['type'] == 'default':
                         screenshot['default'] = True
                 # in case of old styled xmls
-                url = usubs.text.strip()
+                url = usubs.text
                 if url:
+                    url = url.strip()
                     screenshot['source-image'] = {'url': url}
                     shots.append(screenshot)
                     continue
@@ -738,7 +738,7 @@ class ContentGenerator:
         '''
         self._cdata = compdata
 
-    def dump_meta(self, dic, flag, ofile, dep11):
+    def dump_meta(self, dic, dep11, flag):
         '''
         Genrerates Appstream metadata in yaml format and also dumps
         it into the db( bin_dep11 table)
@@ -925,7 +925,7 @@ class MetadataPool:
             dic = cg._cdata.serialize_to_dic()
             # if flag is true we ignore while writing
             flag = (not (screen_bool or icon_bool)) or cg._cdata.ignore
-            cg.dump_meta(dic, ofile, dep11, flag)
+            cg.dump_meta(dic, dep11, flag)
         dep11.close()
 
 ##############################################################################
@@ -949,7 +949,7 @@ def make_icon_tar(suitename, component):
 
     tar.close()
 
-# defining a __arch__ dict. Lists archs per component. 
+# defining a __arch__ dict. Lists archs per component.
 # Used while wroiting metatdata.
 __arch__ = {}
 
@@ -982,7 +982,7 @@ def process_suite(suite):
                 'component': component,
                 'architecture': arch,
             }
-            
+
             # populating arch[component] list
             if __arch__.get(component):
                 if arch not in __arch__[component]:
@@ -1011,7 +1011,7 @@ def process_suite(suite):
                     pool.append_compdata(cd_list)
                 else:
                     print('Invalid path %s' % (path+key))
-                    
+
             # Save metadata of all binaries of the Components-arch
             # This would require a lock
             pool.saver()
@@ -1045,7 +1045,7 @@ def write_component_files(suite,suitename):
             dep11_data.close()
             writer.close()
 
-    
+
 def main():
     if len(sys.argv) < 2:
         usage()
